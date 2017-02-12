@@ -1,1 +1,1 @@
-# matrix
+# matrixTrading simulator based on historical trades for a given equity
