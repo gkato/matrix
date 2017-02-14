@@ -32,34 +32,36 @@ class Strategy
     self.position = position_type
     self.position_val = self.current.value
     self.position_size = 2
-
+    self.allowed = false
     #puts "ENTROU na posição lado: #{self.position} - preco #{self.position_val} - horario #{self.current.date.hour}:#{self.current.date.minute}"
   end
 
   def close_position
     self.position_size = 0
+    self.position_val = nil
     self.position = :liquid
-    self.allowed = false
   end
 
   def take_profit
     self.net += (self.current.value - self.position_val).abs * self.tic_val
+    self.position_size -= 1 if self.position_size > 0
     #puts "   Take profit net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
   end
 
-  def take_loss
+  def take_loss(flip=false)
     last_position = self.position
-    self.net -= ((self.stop + self.start) * self.tic_val * self.position_size).abs
+    self.net -= ((self.position_val - self.current.value).abs * self.tic_val * self.position_size).abs
     close_position
 
     #puts "   STOP net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+    return if !flip
     if(self.current.date.hour < self.limit_time)
       enter_position(:long) if(last_position == :short)
       enter_position(:short) if(last_position == :long)
     end
   end
 
-  def run_stategy
+  def run_strategy
     self.allowed = true
 
     self.historic.each_with_index do |tt, i|
@@ -92,7 +94,6 @@ class Strategy
 
         if(self.current.value >= (self.position_val + self.gain_1) && self.position_size == 2) #contrato 1
           take_profit
-          self.position_size = 1
         end
 
         if(self.current.value >= (self.position_val + self.gain_2) && self.position_size == 1) #contrato 2
@@ -101,7 +102,7 @@ class Strategy
         end
 
         if(self.current.value <= (self.openning - self.stop))
-          take_loss
+          take_loss(true)
         end
       end
 
@@ -109,7 +110,6 @@ class Strategy
 
         if(self.current.value <= (self.position_val - self.gain_1) && self.position_size == 2) #contrato 1
           take_profit
-          self.position_size = 1
         end
 
         if(self.current.value <= (self.position_val - self.gain_2) && self.position_size == 1) #contrato 2
@@ -118,10 +118,20 @@ class Strategy
         end
 
         if(self.current.value >= (self.openning + self.stop))
-          take_loss
+          take_loss(true)
         end
       end
 
+    end
+
+    if(self.position != :liquid)
+      if((self.position_val >= self.current.value && self.position == :long) ||
+        (self.position_val <= self.current.value && self.position == :short))
+        self.position_size.times { take_profit }
+        close_position
+      else
+        take_loss(false)
+      end
     end
     #puts "Fim da execução Net: #{self.net} - horario #{self.current.date.hour} - position #{self.position} - setup: #{self.poss}"
     print "."
