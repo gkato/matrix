@@ -1,5 +1,6 @@
 require 'parallel'
 require 'date'
+require 'byebug'
 #require 'data_loader'
 #require 'tt'
 #require 'reporter'
@@ -48,7 +49,7 @@ class Matrix
     start = Time.now
     Parallel.each(full_historic.values, in_threads: days) do |day|
       results = []
-      formated_date = format_date(day[:tt].first.date)
+      formated_date = day[:tt].first.date.strftime("%d/%m/%Y")
 
       #Parallel.each(possibilities, in_threads: 20) do |poss|
       possibilities.each do |poss|

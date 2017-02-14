@@ -1,6 +1,4 @@
 require 'data_loader'
-require 'support/factory_girl'
-require 'byebug'
 
 describe DataLoader do
 
