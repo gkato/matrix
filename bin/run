@@ -1,5 +1,5 @@
 #! /usr/bin/ruby
 
 require_relative "../lib/tt"
-require_relative "../lib/matrix_machine"
+require_relative "../lib/matrix"
 Matrix.new.start

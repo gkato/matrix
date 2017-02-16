@@ -1,6 +1,5 @@
 require 'parallel'
 require 'date'
-require 'byebug'
 #require 'data_loader'
 #require 'tt'
 #require 'reporter'
@@ -13,15 +12,6 @@ require_relative "../lib/reporter"
 require_relative "../lib/strategy"
 
 class Matrix
-  def format_date(date)
-    day = date.day
-    month = date.month
-
-    day = "0#{day}" if day.to_s.size == 1
-    month = "0#{month}" if month.to_s.size == 1
-
-    "#{day}/#{month}/#{date.year}"
-  end
 
   def start
     ### Possibilities
@@ -37,30 +27,32 @@ class Matrix
     possibilities = Inputs.combine_array_map(stops, possibilities, :start)
     possibilities = Inputs.combine_array_map(start, possibilities, :stop)
     possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
-    possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss, extra)
+    possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
 
-    full_historic = DataLoader.load_data(11, 50, "WDO", 10)
+    #possibilities = [{:total_loss=>-150, :total_gain=>150, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5}]
+
+    full_historic = DataLoader.load_data(11, 50, "WDO", 20)
 
     poss_size = possibilities.size
     days = full_historic.size
     puts "Existem #{possibilities.size} possibilidades e #{full_historic.size} dia(s). Total is #{poss_size * days}"
 
-    results_per_day = {}
     start = Time.now
     Parallel.each(full_historic.values, in_threads: days) do |day|
       results = []
       formated_date = day[:tt].first.date.strftime("%d/%m/%Y")
 
-      #Parallel.each(possibilities, in_threads: 20) do |poss|
       possibilities.each do |poss|
+        poss.merge!({net:0, stops:0, gains:0, per_day:[]}) if poss[:per_day].nil?
+
         strategy = Strategy.new(poss, 10, 11, day[:tt], day[:openning], formated_date)
+        strategy.visual = false
         result = strategy.run_strategy
 
-        results << result
+        poss[:net] += result if result
+        poss[:per_day] << {date:formated_date, net:result}
+
       end
-      results.sort! { |a,b| a[:net] <=> b[:net] }
-      date = day[:tt].first.date
-      results_per_day[formated_date] = results
 
     end
     finish = Time.now
@@ -68,9 +60,7 @@ class Matrix
 
     puts "Tooks #{diff}ms"
 
-    #Reporter.report(results_per_day)
     Reporter.by_possibility(possibilities)
-    debugger
     puts ""
   end
 end

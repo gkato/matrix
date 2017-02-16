@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
 gem "rspec"
-gem "byebug"
+#gem "byebug"
 gem "parallel"
-gem "factory_girl", "~> 4.0"
+#gem "factory_girl", "~> 4.0"

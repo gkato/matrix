@@ -18,7 +18,8 @@ describe Matrix do
       allow(Inputs).to receive(:combine_array_map).and_return(possibilities)
       allow(DataLoader).to receive(:load_data).and_return({"1" => {tt:[tt]}})
       allow(Strategy).to receive(:new).and_return(strategy)
-      allow(strategy).to receive(:run_strategy).and_return({})
+      allow(strategy).to receive(:run_strategy).and_return(10)
+      allow(strategy).to receive(:visual=)
       allow(Reporter).to receive(:by_possibility)
     end
 

@@ -1,6 +1,6 @@
 class Strategy
 
-  attr_accessor :stop, :gain_1, :gain_2, :start, :current, :openning, :position, :position_size, :tic_val, :net, :limit_time, :historic, :poss, :position_val, :allowed, :total_loss, :total_gain, :last, :formated_date
+  attr_accessor :stop, :gain_1, :gain_2, :start, :current, :openning, :position, :position_size, :tic_val, :net, :limit_time, :historic, :poss, :position_val, :allowed, :total_loss, :total_gain, :last, :formated_date, :visual
 
   def initialize(po, tic_value, time, hist, openning, formated_date)
     self.stop = po[:stop]
@@ -17,9 +17,14 @@ class Strategy
     self.tic_val = tic_value
     self.net = 0
     self.limit_time = time
-    self.poss = po
+    #self.poss = po
     self.historic = hist
     self.formated_date = formated_date
+    self.visual = false
+  end
+
+  def debug(line)
+    puts line if visual
   end
 
   def risky?
@@ -33,7 +38,7 @@ class Strategy
     self.position_val = self.current.value
     self.position_size = 2
     self.allowed = false
-    #puts "ENTROU na posição lado: #{self.position} - preco #{self.position_val} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+    debug "ENTROU na posição lado: #{self.position} - preco #{self.position_val} - horario #{self.current.date.hour}:#{self.current.date.minute}"
   end
 
   def close_position
@@ -45,7 +50,7 @@ class Strategy
   def take_profit
     self.net += (self.current.value - self.position_val).abs * self.tic_val
     self.position_size -= 1 if self.position_size > 0
-    #puts "   Take profit net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+    debug  "   Take profit net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
   end
 
   def take_loss(flip=false)
@@ -53,8 +58,9 @@ class Strategy
     self.net -= ((self.position_val - self.current.value).abs * self.tic_val * self.position_size).abs
     close_position
 
-    #puts "   STOP net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+    debug "   STOP net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
     return if !flip
+    debug "   Fliping"
     if(self.current.date.hour < self.limit_time)
       enter_position(:long) if(last_position == :short)
       enter_position(:short) if(last_position == :long)
@@ -133,15 +139,9 @@ class Strategy
         take_loss(false)
       end
     end
-    #puts "Fim da execução Net: #{self.net} - horario #{self.current.date.hour} - position #{self.position} - setup: #{self.poss}"
+    debug "Fim da execução Net: #{self.net} - horario #{self.current.date.hour} - position #{self.position} - setup: #{self.poss}"
     print "."
-    result = {}
 
-    self.poss[:net] += self.net
-    self.poss[:per_day] << {date:self.formated_date, net:self.net}
-
-    result[:net] = self.net
-    result[:poss] = self.poss
-    result
+    self.net
   end
 end
