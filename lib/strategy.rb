@@ -1,6 +1,9 @@
 class Strategy
 
-  attr_accessor :stop, :gain_1, :gain_2, :start, :current, :openning, :position, :position_size, :tic_val, :net, :limit_time, :historic, :poss, :position_val, :allowed, :total_loss, :total_gain, :last, :formated_date, :visual
+  attr_accessor :stop, :gain_1, :gain_2, :start, :current, :openning, :position,
+                :position_size, :tic_val, :net, :limit_time, :historic, :poss,
+                :position_val, :allowed, :total_loss, :total_gain, :last,
+                :formated_date, :visual, :breakeven
 
   def initialize(po, tic_value, time, hist, openning, formated_date)
     self.stop = po[:stop]
@@ -21,6 +24,7 @@ class Strategy
     self.historic = hist
     self.formated_date = formated_date
     self.visual = false
+    self.breakeven = po[:breakeven]
   end
 
   def debug(line)
@@ -67,6 +71,11 @@ class Strategy
     end
   end
 
+  def ensure_breakeven
+    debug "   Breakeven second contract on #{self.position_val}"
+    take_loss(false)
+  end
+
   def run_strategy
     self.allowed = true
 
@@ -110,6 +119,10 @@ class Strategy
         if(self.current.value <= (self.openning - self.stop))
           take_loss(true)
         end
+
+        if(self.breakeven && self.position_size == 1 && (self.current.value <= self.position_val ))
+          ensure_breakeven
+        end
       end
 
       if(self.position == :short)
@@ -125,6 +138,10 @@ class Strategy
 
         if(self.current.value >= (self.openning + self.stop))
           take_loss(true)
+        end
+
+        if(self.breakeven && self.position_size == 1 && (self.current.value >= self.position_val))
+          ensure_breakeven
         end
       end
 

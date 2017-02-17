@@ -1,4 +1,5 @@
 require 'strategy'
+require 'tt'
 
 describe Strategy do
   let(:poss) { {stop:1, gain_1:1, gain_2:2, start:1, total_gain:100, total_loss:-100, net:0, per_day:[]} }
@@ -214,7 +215,7 @@ describe Strategy do
     end
 
     context "given a historic with one take loss and one take profit" do
-      it "runs the strategy and set results, onte stop a one gain with an up gap (hugher" do
+      it "runs the strategy and set results, onte stop a one gain with an up gap (hugher)" do
         strategy.historic =
           [TT.new(DateTime.strptime("31/01/2017 09:00:01", "%d/%m/%Y %H:%M:%S"), 3050, 1, "A", "B", :ask),
           TT.new(DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), 3051, 1, "C", "D", :bid),
@@ -228,6 +229,36 @@ describe Strategy do
       end
     end
 
+    context "given a historic with one take profit for first contract an break even for second (short)" do
+      it "runs the strategy, takes profit for the first contract and breakeven the second contract" do
+        strategy.historic =
+          [TT.new(DateTime.strptime("31/01/2017 09:00:01", "%d/%m/%Y %H:%M:%S"), 3050, 1, "A", "B", :ask),
+          TT.new(DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), 3049, 1, "C", "D", :bid),
+          TT.new(DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), 3050, 1, "E", "F", :bid),
+          TT.new(DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), 3053, 1, "E", "F", :bid)]
+
+          strategy.breakeven = true
+          strategy.run_strategy
+
+          expect(strategy.net).to be(10)
+      end
+    end
+
+    context "given a historic with one take profit for first contract an break even for second (long)" do
+      it "runs the strategy, takes profit for the first contract and breakeven the second contract" do
+        strategy.historic =
+          [TT.new(DateTime.strptime("31/01/2017 09:00:01", "%d/%m/%Y %H:%M:%S"), 3053, 1, "A", "B", :ask),
+          TT.new(DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), 3054, 1, "C", "D", :bid),
+          TT.new(DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), 3053, 1, "E", "F", :bid),
+          TT.new(DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), 3052, 1, "E", "F", :bid)]
+
+          strategy.breakeven = true
+          strategy.run_strategy
+
+          expect(strategy.net).to be(10)
+      end
+
+    end
     context "given a historic with two gains on short" do
       it "runs the strategy and set results, two gains (no gaps)" do
         strategy.historic =
