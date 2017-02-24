@@ -21,6 +21,7 @@ class Matrix
     gain_2 = (5..8).to_a
     total_loss = [-100, -150, -200, -250]
     total_gain = [100, 150, 200, 250]
+    breakeven = [true, false]
     extra = {net:0, stops:0, gains:0, per_day:[]}
 
     possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
@@ -28,10 +29,11 @@ class Matrix
     possibilities = Inputs.combine_array_map(start, possibilities, :stop)
     possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
     possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
+    possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
 
-    #possibilities = [{:total_loss=>-150, :total_gain=>150, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5}]
+    #possibilities = [{:breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5}]
 
-    full_historic = DataLoader.load_data(11, 50, "WDO", 20)
+    full_historic = DataLoader.load_data("WDO", 20)
 
     poss_size = possibilities.size
     days = full_historic.size
