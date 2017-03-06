@@ -1,5 +1,4 @@
 require 'parallel'
-require 'models/matrix_db'
 require_relative 'tt'
 
 class DataLoader
