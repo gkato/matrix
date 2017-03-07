@@ -66,7 +66,7 @@ class DataLoader
   end
 
   def self.load_data(file_pattern, workers)
-    files = Dir.entries("./csv").select {|f| f =~ /#{file_pattern}/}.sort {|a,b| a <=> b}.first(1)
+    files = Dir.entries("./csv").select {|f| f =~ /#{file_pattern}/}.sort {|a,b| a <=> b}
 
     full_historic = {}
     Parallel.each(files, in_threads: workers) do |file|
