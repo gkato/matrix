@@ -1,10 +1,6 @@
 require 'parallel'
 require 'date'
 #require 'data_loader'
-#require 'tt'
-#require 'reporter'
-#require 'strategy'
-#require 'inputs'
 
 require_relative "../lib/inputs"
 require_relative "../lib/data_loader"

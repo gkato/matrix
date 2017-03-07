@@ -3,7 +3,7 @@ class Strategy
   attr_accessor :stop, :gain_1, :gain_2, :start, :current, :openning, :position,
                 :position_size, :tic_val, :net, :limit_time, :historic, :poss,
                 :position_val, :allowed, :total_loss, :total_gain, :last,
-                :formated_date, :visual, :breakeven
+                :formated_date, :visual, :breakeven, :one_shot, :qty_trades
 
   def initialize(po, tic_value, time, hist, openning, formated_date)
     self.stop = po[:stop]
@@ -19,12 +19,13 @@ class Strategy
     self.position_size = 2
     self.tic_val = tic_value
     self.net = 0
+    self.qty_trades = 0
     self.limit_time = time
-    #self.poss = po
     self.historic = hist
     self.formated_date = formated_date
     self.visual = false
     self.breakeven = po[:breakeven]
+    self.one_shot = po[:one_shot]
   end
 
   def debug(line)
@@ -35,6 +36,10 @@ class Strategy
     return self.net >= self.total_gain || self.net <= self.total_loss
   end
 
+  def exit_on_one_shot?
+    return self.one_shot && qty_trades > 0 && self.position == :liquid
+  end
+
   def enter_position(position_type)
     return if risky?
 
@@ -42,6 +47,7 @@ class Strategy
     self.position_val = self.current.value
     self.position_size = 2
     self.allowed = false
+    self.qty_trades += 1
     debug "ENTROU na posição lado: #{self.position} - preco #{self.position_val} - horario #{self.current.date.hour}:#{self.current.date.minute}"
   end
 
@@ -64,8 +70,8 @@ class Strategy
 
     debug "   STOP net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
     return if !flip
-    debug "   Fliping"
     if(self.current.date.hour < self.limit_time)
+      debug "   Fliping"
       enter_position(:long) if(last_position == :short)
       enter_position(:short) if(last_position == :long)
     end
@@ -81,9 +87,10 @@ class Strategy
 
     self.historic.each_with_index do |tt, i|
       self.last = self.current
-      self.current = tt
 
-      if ((self.position == :liquid && self.current.date.hour >= self.limit_time) || risky?)
+      self.current = TT.new(tt[:date], tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+
+      if ((self.position == :liquid && self.current.date.hour >= self.limit_time) || risky? || exit_on_one_shot?)
         break
       end
 
