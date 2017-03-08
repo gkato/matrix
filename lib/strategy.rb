@@ -88,7 +88,7 @@ class Strategy
     self.historic.each_with_index do |tt, i|
       self.last = self.current
 
-      self.current = TT.new(tt[:date], tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      self.current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
 
       if ((self.position == :liquid && self.current.date.hour >= self.limit_time) || risky? || exit_on_one_shot?)
         break

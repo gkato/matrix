@@ -18,6 +18,7 @@ class Matrix
     total_loss = [-100, -150, -200, -250]
     total_gain = [100, 150, 200, 250]
     breakeven = [true, false]
+    one_shot = [true, false]
     extra = {net:0, stops:0, gains:0, per_day:[]}
 
     possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
@@ -26,10 +27,11 @@ class Matrix
     possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
     possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
     possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
+    possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shote)
 
-    #possibilities = [{:breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5}]
+    #possibilities = [{:breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5, one_shot:true}]
 
-    full_historic = DataLoader.load_data("WDO", 20)
+    full_historic = DataLoader.load_data("WDO", 40)
 
     poss_size = possibilities.size
     days = full_historic.size
@@ -38,7 +40,7 @@ class Matrix
     start = Time.now
     Parallel.each(full_historic.values, in_threads: days) do |day|
       results = []
-      formated_date = day[:tt].first.date.strftime("%d/%m/%Y")
+      formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
 
       possibilities.each do |poss|
         poss.merge!({net:0, stops:0, gains:0, per_day:[]}) if poss[:per_day].nil?
