@@ -4,7 +4,11 @@ class MatrixDB
 
   attr_accessor :mongo, :collection
 
+  Mongo::Logger.logger.level = ::Logger::FATAL
+
   def initialize(cluster, opts = {})
+    opts.merge!({connect_timeout: 15}) if !opts.include?(:connect_timeout)
+    opts.merge!({wait_queue_timeout: 15}) if !opts.include?(:wait_queue_timeout)
     self.mongo = Mongo::Client.new(cluster, opts)
   end
 
@@ -29,4 +33,7 @@ class MatrixDB
     self.collection.find(filters, opts)
   end
 
+  def close
+    self.mongo.close
+  end
 end

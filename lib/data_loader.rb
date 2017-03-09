@@ -4,26 +4,22 @@ require './lib/tt'
 
 class DataLoader
 
-  attr_accessor :matrix_db
+  attr_accessor :matrix_db, :files
 
   def initialize(confs)
     self.matrix_db = MatrixDB.new(confs[:hosts], database:confs[:database])
   end
 
-  def get_stored(file, hour, minute)
-  end
-
-  def from_database(file, hour, minute)
-  end
-
   def load(file)
+    puts "Loading data for file #{file}"
     dayId = file.gsub(".csv", "")
     historic = []
 
-    trading_day = matrix_db.on(:trading_days).find(dayId:dayId).first
+    trading_day = (matrix_db.on(:trading_days).find(dayId:dayId) || []).first
     if trading_day
       historic = matrix_db.on(:times_trades).find(dayId:dayId)
       trading_day[:tt] = historic.to_a.sort {|a,b| a[:date] <=> b[:date]}
+      puts "Data loaded for file #{file}"
       return trading_day
     end
 
@@ -62,19 +58,16 @@ class DataLoader
 
     trading_day[:tt] = historic
 
+    puts "Data loaded for file #{file}"
     trading_day
   end
 
-  def self.load_data(file_pattern, workers)
-    files = Dir.entries("./csv").select {|f| f =~ /#{file_pattern}/}.sort {|a,b| a <=> b}
+  def close
+    matrix_db.close
+  end
 
-    full_historic = {}
-    Parallel.each(files, in_threads: workers) do |file|
-      puts "Loading data for file #{file}"
-
-      full_historic[file] = DataLoader.new({hosts:['localhost'], database:"matrix"}).load(file)
-    end
-    full_historic
+  def self.fetch_trading_days(file_pattern)
+    Dir.entries("./csv").select {|f| f =~ /#{file_pattern}/}.sort {|a,b| a <=> b}
   end
 
 end

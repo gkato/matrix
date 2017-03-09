@@ -16,6 +16,7 @@ describe MatrixDB do
         matrix_db.delete
 
         result = matrix_db.on(:test).find({})
+        matrix_db.close
         expect(result.count).to be 0
       end
     end
@@ -28,6 +29,7 @@ describe MatrixDB do
         matrix_db.delete({ data:"test" })
 
         result = matrix_db.on(:test).find({})
+        matrix_db.close
         expect(result.count).to be 1
       end
     end
@@ -41,6 +43,7 @@ describe MatrixDB do
         data = [expected, { data:"bla bla" }]
         matrix_db.on(:test).insert_many(data)
         result = matrix_db.on(:test).find(expected)
+        matrix_db.close
         expect(result.first[:data]).to eq expected[:data]
       end
     end
@@ -52,6 +55,7 @@ describe MatrixDB do
         matrix_db.on(:test).insert_one({ data:"test" })
 
         result = matrix_db.on(:test).find({ data:"test" })
+        matrix_db.close
         expect(result.count).to be 1
       end
     end
@@ -64,6 +68,7 @@ describe MatrixDB do
         matrix_db.on(:test).insert_many(data)
 
         result = matrix_db.on(:test).find({ data:"test" })
+        matrix_db.close
         expect(result.count).to be 2
       end
     end
