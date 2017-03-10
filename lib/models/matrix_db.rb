@@ -13,27 +13,27 @@ class MatrixDB
   end
 
   def on(collection)
-    self.collection = mongo[collection]
+    self.collection = mongo[collection] rescue self.collection = mongo[collection]
     self
   end
 
   def insert_one(data)
-    self.collection.insert_one(data)
+    self.collection.insert_one(data) rescue self.collection.insert_one(data)
   end
 
   def insert_many(data)
-    self.collection.insert_many(data)
+    self.collection.insert_many(data) rescue self.collection.insert_many(data)
   end
 
   def delete(opts = {})
-    self.collection.delete_many(opts)
+    self.collection.delete_many(opts) rescue self.collection.delete_many(opts)
   end
 
   def find(filters, opts = {})
-    self.collection.find(filters, opts)
+    self.collection.find(filters, opts) rescue self.collection.find(filters, opts)
   end
 
   def close
-    self.mongo.close
+    self.mongo.close rescue self.mongo.close
   end
 end
