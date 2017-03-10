@@ -52,16 +52,19 @@ class Matrix
       data_loader = DataLoader.new(hosts:['localhost'], database:"matrix")
       result_db = MatrixDB.new(['localhost'], database:"matrix")
 
-      day = data_loader.load(file)
-      results = []
-      formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
+      formated_date = file.scan(/WDOH17_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
+      if(result_db.on(:results).find({date:formated_date}) || []).to_a != possibilities.size
+        result_db.on(:results).delete({date:formated_date})
+        day = data_loader.load(file)
+        #formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
 
-      Parallel.each(possibilities, in_threads: 20) do |poss|
-        strategy = Strategy.new(poss, 10, 11, day[:tt], day[:openning], formated_date)
-        strategy.visual = false
-        result = strategy.run_strategy
+        Parallel.each(possibilities, in_threads: 20) do |poss|
+          strategy = Strategy.new(poss, 10, 11, day[:tt], day[:openning], formated_date)
+          strategy.visual = false
+          result = strategy.run_strategy
 
-        result_db.on(:results).insert_one({ possId:poss[:possId], date:formated_date, net:result })
+          result_db.on(:results).insert_one({ possId:poss[:possId], date:formated_date, net:result })
+        end
       end
 
       data_loader.close

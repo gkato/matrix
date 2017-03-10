@@ -35,11 +35,14 @@ describe Matrix do
       allow(matrix_poss_db).to receive(:find).with({}).and_return([])
       allow(matrix_db).to receive(:find).with({possId:0}).and_return([{possId:0, net:10}])
       allow(matrix_db).to receive(:insert_one)
+      allow(matrix_db).to receive(:delete)
       allow(matrix_db).to receive(:close)
     end
 
     context "given default parameters for possibilities" do
-      it "runs the default strategy and print a report" do
+      it "runs the default strategy by day and print a report" do
+        allow(matrix_db).to receive(:find).with({date:"31/01/2017"}).and_return([])
+
         Matrix.new.start
 
         expect(Reporter).to have_received(:by_possibility)
@@ -52,6 +55,29 @@ describe Matrix do
         expect(matrix_db).to have_received(:find).with({possId:0})
         expect(matrix_db).to have_received(:insert_one)
         expect(matrix_db).to have_received(:close).twice
+        expect(matrix_db).to have_received(:delete).with({date:"31/01/2017"})
+        expect(matrix_db).to have_received(:find).with({date:"31/01/2017"})
+      end
+    end
+
+    context "given default parameters for possibilities" do
+      it "runs the default strategy, but do nothing because strategy was already ran for the given day. Will just print a report" do
+        allow(matrix_db).to receive(:find).with({date:"31/01/2017"}).and_return([{possId:0, net:10}])
+
+        Matrix.new.start
+
+        expect(Reporter).to have_received(:by_possibility)
+        expect(DataLoader).to have_received(:fetch_trading_days).with("WDO")
+        expect(data_loader).to have_received(:load).with(file_name)
+        expect(data_loader).to have_received(:close)
+
+        expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
+        expect(matrix_poss_db).to have_received(:find).with({})
+        expect(matrix_db).to have_received(:find).with({possId:0})
+        expect(Strategy).not_to receive(:new)
+        expect(matrix_db).not_to receive(:insert_one)
+        expect(matrix_db).to have_received(:close).twice
+        expect(matrix_db).to have_received(:find).with({date:"31/01/2017"})
       end
     end
   end

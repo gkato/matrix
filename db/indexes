@@ -1,4 +1,5 @@
 db.getCollection('trading_days').createIndex( { dayId: 1 })
 db.getCollection('possibilities').createIndex( { possId: 1 })
 db.getCollection('results').createIndex( { possId: 1 })
+db.getCollection('results').createIndex( { date: 1 })
 db.getCollection('trading_days').createIndex( { dayId: 1 })
