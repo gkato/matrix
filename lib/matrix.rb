@@ -8,24 +8,24 @@ require_relative "../lib/strategy"
 
 class Matrix
 
-  def start
+  def start(equity="WDO", threads_days=10, threads_poss=20, visual=false, ticval=10, time_limit=11)
     matrix_db = MatrixDB.new(['localhost'], database:"matrix")
 
     possibilities = create_posssibilities(matrix_db)
     #possibilities = [{possId:"current", :breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5, one_shot:true}]
 
-    trading_days = DataLoader.fetch_trading_days("WDO")
+    trading_days = DataLoader.fetch_trading_days(equity)
 
     poss_size = possibilities.size
     days = trading_days.size
     puts "Existem #{possibilities.size} possibilidades e #{trading_days.size} dia(s). Total is #{poss_size * days}"
 
     start = Time.now
-    Parallel.each(trading_days, in_threads: 10) do |file|
+    Parallel.each(trading_days, in_threads: threads_days) do |file|
       data_loader = DataLoader.new(hosts:['localhost'], database:"matrix")
       result_db = MatrixDB.new(['localhost'], database:"matrix")
 
-      formated_date = file.scan(/WDO.*_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
+      formated_date = file.scan(/#{equity}.*_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
       done_possibilities = (result_db.on(:results).find({date:formated_date}) || []).to_a
       if done_possibilities.size != possibilities.size
         done_ids = done_possibilities.map {|i| i[:possId]}
@@ -38,9 +38,9 @@ class Matrix
         day = data_loader.load(file)
         formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
 
-        Parallel.each(poss_to_process, in_threads: 20) do |poss|
-          strategy = Strategy.new(poss, 10, 11, day[:tt], day[:openning], formated_date)
-          strategy.visual = false
+        Parallel.each(poss_to_process, in_threads: threads_poss) do |poss|
+          strategy = Strategy.new(poss, ticval, time_limit, day[:tt], day[:openning], formated_date)
+          strategy.visual = visual
           result = strategy.run_strategy
 
           result_db.on(:results).insert_one({ possId:poss[:possId], date:formated_date, net:result })
@@ -50,8 +50,7 @@ class Matrix
       data_loader.close
       result_db.close
     end
-    finish = Time.now
-    diff = finish - start
+    diff = Time.now- start
     puts "Tooks #{diff}ms"
 
     prepare_results(possibilities, matrix_db)
