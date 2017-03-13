@@ -8,37 +8,10 @@ require_relative "../lib/strategy"
 
 class Matrix
 
-  def create_posssibilities
-    stops = (1..5).to_a
-    start = (1..5).to_a
-    gain_1 = (1..5).to_a
-    gain_2 = (5..8).to_a
-    total_loss = [-100, -150, -200, -250]
-    total_gain = [100, 150, 200, 250]
-    breakeven = [true, false]
-    one_shot = [true, false]
-
-    possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
-    possibilities = Inputs.combine_array_map(stops, possibilities, :start)
-    possibilities = Inputs.combine_array_map(start, possibilities, :stop)
-    possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
-    possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
-    possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
-    possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shote)
-
-    possibilities.each_with_index { |poss, i| poss[:possId] = i }
-    possibilities
-  end
-
   def start
     matrix_db = MatrixDB.new(['localhost'], database:"matrix")
-    possibilities = matrix_db.on(:possibilities).find({}).to_a
 
-    if possibilities.empty?
-      possibilities = create_posssibilities
-      matrix_db.on(:possibilities).insert_many(possibilities)
-    end
-
+    possibilities = create_posssibilities(matrix_db)
     #possibilities = [{possId:"current", :breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5, one_shot:true}]
 
     trading_days = DataLoader.fetch_trading_days("WDO")
@@ -52,13 +25,20 @@ class Matrix
       data_loader = DataLoader.new(hosts:['localhost'], database:"matrix")
       result_db = MatrixDB.new(['localhost'], database:"matrix")
 
-      formated_date = file.scan(/WDOH17_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
-      if(result_db.on(:results).find({date:formated_date}) || []).to_a != possibilities.size
-        result_db.on(:results).delete({date:formated_date})
-        day = data_loader.load(file)
-        #formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
+      formated_date = file.scan(/WDO.*_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
+      done_possibilities = (result_db.on(:results).find({date:formated_date}) || []).to_a
+      if done_possibilities.size != possibilities.size
+        done_ids = done_possibilities.map {|i| i[:possId]}
+        poss_to_process = possibilities.select {|i| !done_ids.include?(i[:possId])}
 
-        Parallel.each(possibilities, in_threads: 20) do |poss|
+        if(poss_to_process.size != possibilities.size)
+          puts "Resuming processing for day #{formated_date}, #{poss_to_process.size} reamaining..."
+        end
+
+        day = data_loader.load(file)
+        formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
+
+        Parallel.each(poss_to_process, in_threads: 20) do |poss|
           strategy = Strategy.new(poss, 10, 11, day[:tt], day[:openning], formated_date)
           strategy.visual = false
           result = strategy.run_strategy
@@ -72,9 +52,48 @@ class Matrix
     end
     finish = Time.now
     diff = finish - start
-
     puts "Tooks #{diff}ms"
 
+    prepare_results(possibilities, matrix_db)
+
+    matrix_db.close
+  end
+
+  def run_results
+    matrix_db = MatrixDB.new(['localhost'], database:"matrix")
+    possibilities = create_posssibilities(matrix_db)
+    prepare_results(possibilities, matrix_db)
+    matrix_db.close
+  end
+
+  def create_posssibilities(matrix_db)
+    possibilities = (matrix_db.on(:possibilities).find({}) || []).to_a
+
+    if possibilities.empty?
+      stops = (1..5).to_a
+      start = (1..5).to_a
+      gain_1 = (1..5).to_a
+      gain_2 = (5..8).to_a
+      total_loss = [-100, -150, -200, -250]
+      total_gain = [100, 150, 200, 250]
+      breakeven = [true, false]
+      one_shot = [true, false]
+
+      possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
+      possibilities = Inputs.combine_array_map(stops, possibilities, :start)
+      possibilities = Inputs.combine_array_map(start, possibilities, :stop)
+      possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
+      possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
+      possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
+      possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shote)
+
+      possibilities.each_with_index { |poss, i| poss[:possId] = i }
+      matrix_db.on(:possibilities).insert_many(possibilities)
+    end
+    possibilities
+  end
+
+  def prepare_results(possibilities, matrix_db)
     puts "Preparing results.."
 
     possibilities.each do |poss|
@@ -84,8 +103,6 @@ class Matrix
         poss[:net] += per_day[:net]
       end
     end
-    matrix_db.close
     Reporter.by_possibility(possibilities)
-    puts ""
   end
 end
