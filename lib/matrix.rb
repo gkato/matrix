@@ -4,7 +4,7 @@ require 'date'
 require_relative "../lib/inputs"
 require_relative "../lib/data_loader"
 require_relative "../lib/reporter"
-require_relative "../lib/strategy"
+require_relative "../lib/strategies/opening_v1"
 
 class Matrix
 
@@ -39,7 +39,7 @@ class Matrix
         formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
 
         Parallel.each(poss_to_process, in_threads: threads_poss) do |poss|
-          strategy = Strategy.new(poss, ticval, time_limit, day[:tt], day[:openning], formated_date)
+          strategy = OpeningV1.new(poss, ticval, time_limit, day[:tt], day[:openning], formated_date)
           strategy.visual = visual
           result = strategy.run_strategy
 

@@ -3,7 +3,7 @@ require 'matrix'
 require 'inputs'
 require 'data_loader'
 require 'data_loader'
-require 'strategy'
+require 'strategies/opening_v1'
 require 'Reporter'
 
 describe Matrix do
@@ -74,7 +74,7 @@ describe Matrix do
     before do
       allow(DataLoader).to receive(:new).and_return(data_loader)
       allow(DataLoader).to receive(:fetch_trading_days).and_return([file_name])
-      allow(Strategy).to receive(:new).and_return(strategy)
+      allow(OpeningV1).to receive(:new).and_return(strategy)
       allow(strategy).to receive(:run_strategy).and_return(10)
       allow(strategy).to receive(:visual=)
       allow(data_loader).to receive(:load).and_return({tt:[tt]})
@@ -116,7 +116,7 @@ describe Matrix do
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
         expect(matrix_poss_db).to have_received(:find).with({})
         expect(matrix_db).to have_received(:find).with({possId:0})
-        expect(Strategy).not_to receive(:new)
+        expect(OpeningV1).not_to receive(:new)
         expect(matrix_db).not_to receive(:insert_one)
         expect(matrix_db).to have_received(:close).twice
         expect(matrix_db).to have_received(:find).with({date:"31/01/2017"})

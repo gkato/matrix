@@ -1,22 +1,23 @@
 class Strategy
 
-  attr_accessor :stop, :gain_1, :gain_2, :start, :current, :openning, :position,
+  attr_accessor :stop, :gains, :start, :current, :openning, :position,
                 :position_size, :tic_val, :net, :limit_time, :historic, :poss,
                 :position_val, :allowed, :total_loss, :total_gain, :last,
                 :formated_date, :visual, :breakeven, :one_shot, :qty_trades
 
-  def initialize(po, tic_value, time, hist, openning, formated_date)
-    self.stop = po[:stop]
-    self.gain_1 = po[:gain_1]
-    self.gain_2 = po[:gain_2]
-    self.start = po[:start]
-    self.total_loss = po[:total_loss]
-    self.total_gain = po[:total_gain]
+  def initialize(possibility, tic_value, time, hist, openning, formated_date)
+    self.stop = possibility[:stop]
+    self.gains = possibility.select {|k,v| k.to_s =~ /^gain_\d+$/ }
+    self.start = possibility[:start]
+    self.total_loss = possibility[:total_loss]
+    self.total_gain = possibility[:total_gain]
+    self.breakeven = possibility[:breakeven]
+    self.one_shot = possibility[:one_shot]
+    self.position_size = 0
     self.current = nil
     self.last = nil
     self.openning = openning
     self.position = :liquid
-    self.position_size = 2
     self.tic_val = tic_value
     self.net = 0
     self.qty_trades = 0
@@ -24,8 +25,7 @@ class Strategy
     self.historic = hist
     self.formated_date = formated_date
     self.visual = false
-    self.breakeven = po[:breakeven]
-    self.one_shot = po[:one_shot]
+    self.allowed = true
   end
 
   def debug(line)
@@ -45,7 +45,7 @@ class Strategy
 
     self.position = position_type
     self.position_val = self.current.value
-    self.position_size = 2
+    self.position_size = gains.size
     self.allowed = false
     self.qty_trades += 1
     debug "ENTROU na posição lado: #{self.position} - preco #{self.position_val} - horario #{self.current.date.hour}:#{self.current.date.minute}"
@@ -83,89 +83,6 @@ class Strategy
   end
 
   def run_strategy
-    self.allowed = true
-
-    self.historic.each_with_index do |tt, i|
-      self.last = self.current
-
-      self.current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
-
-      if ((self.position == :liquid && self.current.date.hour >= self.limit_time) || risky? || exit_on_one_shot?)
-        break
-      end
-
-      if(self.position == :liquid && !self.allowed)
-        if (self.current.value >= self.openning && self.last.value < self.openning) ||
-           (self.current.value <= self.openning && self.last.value > self.openning)
-
-          self.allowed = true
-        end
-      end
-
-      if (self.position == :liquid && self.current.value >= (self.openning + self.start) && self.allowed)
-        enter_position :long
-        next
-      end
-
-      if (self.position == :liquid && self.current.value <= (self.openning - self.start) && self.allowed)
-        enter_position :short
-        next
-      end
-
-      if(self.position == :long)
-
-        if(self.current.value >= (self.position_val + self.gain_1) && self.position_size == 2) #contrato 1
-          take_profit
-        end
-
-        if(self.current.value >= (self.position_val + self.gain_2) && self.position_size == 1) #contrato 2
-          take_profit
-          close_position
-        end
-
-        if(self.current.value <= (self.openning - self.stop))
-          take_loss(true)
-        end
-
-        if(self.breakeven && self.position_size == 1 && (self.current.value <= self.position_val ))
-          ensure_breakeven
-        end
-      end
-
-      if(self.position == :short)
-
-        if(self.current.value <= (self.position_val - self.gain_1) && self.position_size == 2) #contrato 1
-          take_profit
-        end
-
-        if(self.current.value <= (self.position_val - self.gain_2) && self.position_size == 1) #contrato 2
-          take_profit
-          close_position
-        end
-
-        if(self.current.value >= (self.openning + self.stop))
-          take_loss(true)
-        end
-
-        if(self.breakeven && self.position_size == 1 && (self.current.value >= self.position_val))
-          ensure_breakeven
-        end
-      end
-
-    end
-
-    if(self.position != :liquid)
-      if((self.position_val >= self.current.value && self.position == :long) ||
-        (self.position_val <= self.current.value && self.position == :short))
-        self.position_size.times { take_profit }
-        close_position
-      else
-        take_loss(false)
-      end
-    end
-    debug "Fim da execução Net: #{self.net} - horario #{self.current.date.hour} - position #{self.position} - setup: #{self.poss}"
-    print "."
-
-    self.net
+    #implement strategy
   end
 end
