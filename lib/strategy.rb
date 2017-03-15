@@ -6,8 +6,9 @@ class Strategy
                 :formated_date, :visual, :breakeven, :one_shot, :qty_trades
 
   def initialize(possibility, tic_value, time, hist, openning, formated_date)
+
     self.stop = possibility[:stop]
-    self.gains = possibility.select {|k,v| k.to_s =~ /^gain_\d+$/ }
+    self.gains = possibility.select {|k,v| k.to_s =~ /^gain_\d+$/ }.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
     self.start = possibility[:start]
     self.total_loss = possibility[:total_loss]
     self.total_gain = possibility[:total_gain]
