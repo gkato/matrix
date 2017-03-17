@@ -45,8 +45,10 @@ class DataLoader
         historic << { dayId:dayId, date:date, value:price, qty:qty, ask:ask, bid:bid, agressor:agressor }
       end
       if agressor[0..-3] == "Leil"
-        openning = price if openning.nil?
-        break
+        if(date.hour == 9 && date.minute < 5)
+          openning = price if openning.nil?
+          break
+        end
       end
     end
     historic.reverse!
