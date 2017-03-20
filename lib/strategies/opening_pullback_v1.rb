@@ -1,6 +1,7 @@
 require './lib/strategy'
+require './lib/inputs'
 
-class OpeningV1 < Strategy
+class OpeningPullbackV1 < Strategy
 
   def run_strategy
     self.allowed = true

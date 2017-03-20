@@ -4,7 +4,7 @@ if [ "$1" = "strat" ]; then
       ruby ./lib/runner.rb $4
     fi
     if [ "$3" = "results" ]; then
-      ruby ./lib/runner.rb
+      ruby ./lib/runner.rb $3 $4
     fi
   fi
 fi

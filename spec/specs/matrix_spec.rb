@@ -20,9 +20,8 @@ describe Matrix do
     allow(matrix_db).to receive(:find).with({strategy_name:strategy_name, possId:0}).and_return([{possId:0, net:10}])
     allow(matrix_poss_db).to receive(:insert_many)
     allow(matrix_poss_db).to receive(:find).with({"name":strategy_name}).and_return([])
-    allow(Inputs).to receive(:combine_arrays).and_return(possibilities)
-    allow(Inputs).to receive(:combine_array_map).and_return(possibilities)
     allow(matrix_db).to receive(:close)
+    allow(OpeningV1).to receive(:create_inputs).and_return(possibilities)
   end
 
   describe "#run_results" do
@@ -34,6 +33,18 @@ describe Matrix do
         expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, possId:0})
         expect(Reporter).to have_received(:by_possibility)
         expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
+        expect(matrix_db).to have_received(:close)
+      end
+    end
+
+    context "given a possibilities, all results processed and a specific possibility" do
+      it "do nothing because the specific possibility was given doesnt exists" do
+        Matrix.new.run_results(strategy_name, possId:1859)
+
+        expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
+        expect(matrix_db).not_to receive(:find).with({strategy_name:strategy_name, possId:0})
+        expect(Reporter).not_to receive(:by_possibility)
+        expect(matrix_poss_db).not_to receive(:find).with({"name":strategy_name})
         expect(matrix_db).to have_received(:close)
       end
     end

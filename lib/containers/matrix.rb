@@ -74,10 +74,15 @@ class Matrix
     file.scan(/#{equity}.*_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
   end
 
-  def run_results(strategy_name)
+  def get_strategy_class(strategy_name)
+    Object.const_get(strategy_name.split('_').collect(&:capitalize).join)
+  end
+
+  def run_results(strategy_name, opts={})
     matrix_db = MatrixDB.new(['localhost'], database:"matrix")
 
     possibilities = create_posssibilities(matrix_db, strategy_name)
+    possibilities = possibilities.find_all {|poss| poss[:possId] == opts[:possId]  } if opts[:possId]
     #possibilities = [{possId:"current", :breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5, one_shot:true}]
     prepare_results(possibilities, matrix_db, strategy_name)
 
@@ -88,23 +93,7 @@ class Matrix
     possibilities = (matrix_db.on(:possibilities).find({"name":strategy_name}) || []).to_a
 
     if possibilities.empty?
-      stops = (1..5).to_a
-      start = (1..5).to_a
-      gain_1 = (1..5).to_a
-      gain_2 = (5..8).to_a
-      total_loss = [-100, -150, -200, -250]
-      total_gain = [100, 150, 200, 250]
-      breakeven = [true, false]
-      one_shot = [true, false]
-
-      possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
-      possibilities = Inputs.combine_array_map(stops, possibilities, :start)
-      possibilities = Inputs.combine_array_map(start, possibilities, :stop)
-      possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
-      possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
-      possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
-      possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shot)
-
+      possibilities = get_strategy_class(strategy_name).create_inputs
       possibilities.each_with_index do |poss, i|
         poss[:possId] = i
         poss[:name] = strategy_name

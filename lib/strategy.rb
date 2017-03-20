@@ -86,4 +86,8 @@ class Strategy
   def run_strategy
     #implement strategy
   end
+
+  def self.create_inputs
+    []
+  end
 end
