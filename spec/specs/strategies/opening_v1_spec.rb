@@ -18,9 +18,10 @@ describe OpeningV1 do
     before do
       strategy.historic =
       [{ date:DateTime.strptime("31/01/2017 09:00:01", "%d/%m/%Y %H:%M:%S"), value:3050, qty:1, ask:"A", bid:"B", :agressor=>:ask},
-       { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3051, qty:1, ask:"C", bid:"D", :agressor=>:bid},
-       { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"E", bid:"F", :agressor=>:bid}]
+       { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"C", bid:"D", :agressor=>:bid},
+       { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3051, qty:1, ask:"E", bid:"F", :agressor=>:bid}]
     end
+
     context "given a historic (default - a take profit and close position)" do
       it "runs the strategy and set results - (take profit 1 contract, take loss 1 contract)" do
         strategy.run_strategy
@@ -160,6 +161,20 @@ describe OpeningV1 do
           strategy.run_strategy
 
           expect(strategy.net).to be(30)
+      end
+    end
+
+    context "given a historic with one gain on short then time limit reached" do
+      it "runs the strategy and set results, when second gain in same first contract price range" do
+        strategy.historic =
+          [{ date:DateTime.strptime("31/01/2017 09:00:01", "%d/%m/%Y %H:%M:%S"), value:3051,   qty:1, ask:"A", bid:"B", :agressor=>:ask},
+           { date:DateTime.strptime("31/01/2017 10:00:02", "%d/%m/%Y %H:%M:%S"), value:3050,   qty:1, ask:"C", bid:"D", :agressor=>:bid},
+           { date:DateTime.strptime("31/01/2017 10:00:03", "%d/%m/%Y %H:%M:%S"), value:3050,   qty:1, ask:"E", bid:"F", :agressor=>:bid},
+           { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3050,   qty:1, ask:"E", bid:"F", :agressor=>:bid}]
+
+          strategy.run_strategy
+
+          expect(strategy.net).to be(20)
       end
     end
 

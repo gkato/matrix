@@ -10,6 +10,7 @@ describe Matrix do
   let(:matrix_db) { double }
   let(:matrix_poss_db) { double }
   let(:strategy_name) { "opening_v1" }
+  let(:strat_equity) { "opening_v1_WDO" }
   let(:possibilities) {[{total_loss:-100, total_gain:200, stop:4, start:3, gain_1:4, gain_2:5, net:0, stops:0, gains:0}]}
 
   before do
@@ -17,9 +18,9 @@ describe Matrix do
     allow(MatrixDB).to receive(:new).and_return(matrix_db)
     allow(matrix_db).to receive(:on).with(:results) { matrix_db }
     allow(matrix_db).to receive(:on).with(:possibilities) { matrix_poss_db }
-    allow(matrix_db).to receive(:find).with({strategy_name:strategy_name, possId:0}).and_return([{possId:0, net:10}])
+    allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, possId:0}).and_return([{possId:0, net:10}])
     allow(matrix_poss_db).to receive(:insert_many)
-    allow(matrix_poss_db).to receive(:find).with({"name":strategy_name}).and_return([])
+    allow(matrix_poss_db).to receive(:find).with({"name":strat_equity}).and_return([])
     allow(matrix_db).to receive(:close)
     allow(OpeningV1).to receive(:create_inputs).and_return(possibilities)
   end
@@ -27,24 +28,24 @@ describe Matrix do
   describe "#run_results" do
     context "given a possibilities and all results processed" do
       it "prepare and show results" do
-        Matrix.new.run_results(strategy_name)
+        Matrix.new.run_results(strat_equity)
 
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, possId:0})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(Reporter).to have_received(:by_possibility)
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
         expect(matrix_db).to have_received(:close)
       end
     end
 
     context "given a possibilities, all results processed and a specific possibility" do
       it "do nothing because the specific possibility was given doesnt exists" do
-        Matrix.new.run_results(strategy_name, possId:1859)
+        Matrix.new.run_results(strat_equity, possId:1859)
 
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
         expect(matrix_db).not_to receive(:find).with({strategy_name:strategy_name, possId:0})
         expect(Reporter).not_to receive(:by_possibility)
-        expect(matrix_poss_db).not_to receive(:find).with({"name":strategy_name})
+        expect(matrix_poss_db).not_to receive(:find).with({"name":strat_equity})
         expect(matrix_db).to have_received(:close)
       end
     end
@@ -53,9 +54,9 @@ describe Matrix do
   describe "#create_posssibilities" do
     context "a matrix_db object with connection to the database" do
       it "returns the strategy possibilities or create another one" do
-        results = Matrix.new.create_posssibilities(matrix_db, strategy_name)
+        results = Matrix.new.create_posssibilities(matrix_db, strat_equity)
 
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
 
         results.first.delete(:possId)
@@ -65,10 +66,10 @@ describe Matrix do
 
     context "a matrix_db object with connection to the database" do
       it "returns the strategy possibilities or create another one, fetched from matrix db" do
-        allow(matrix_poss_db).to receive(:find).with({"name":strategy_name}).and_return(possibilities)
-        results = Matrix.new.create_posssibilities(matrix_db, strategy_name)
+        allow(matrix_poss_db).to receive(:find).with({"name":strat_equity}).and_return(possibilities)
+        results = Matrix.new.create_posssibilities(matrix_db, strat_equity)
 
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
         expect(matrix_poss_db).not_to receive(:insert_many)
 
         results.first.delete(:possId)
@@ -81,9 +82,9 @@ describe Matrix do
     context "given a possibilities and all results is processed" do
       it "prepares and report results" do
         possibilities.first[:possId] = 0
-        Matrix.new.prepare_results(possibilities, matrix_db, strategy_name)
+        Matrix.new.prepare_results(possibilities, matrix_db, strat_equity)
 
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, possId:0})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(Reporter).to have_received(:by_possibility)
         expect(possibilities.first[:net]).to eq(10)
       end
@@ -111,7 +112,7 @@ describe Matrix do
 
     context "given default parameters for possibilities" do
       it "runs the default strategy by day and print a report" do
-        allow(matrix_db).to receive(:find).with({strategy_name:strategy_name, date:"31/01/2017"}).and_return([])
+        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:"31/01/2017"}).and_return([])
 
         Matrix.new.start
 
@@ -121,17 +122,17 @@ describe Matrix do
         expect(data_loader).to have_received(:close)
 
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, possId:0})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(matrix_db).to have_received(:insert_one)
         expect(matrix_db).to have_received(:close).twice
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, date:"31/01/2017"})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:"31/01/2017"})
       end
     end
 
     context "given default parameters for possibilities" do
       it "runs the default strategy, but do nothing because strategy was already ran for the given day. Will just print a report" do
-        allow(matrix_db).to receive(:find).with({strategy_name:strategy_name, date:"31/01/2017"}).and_return([{possId:0, net:10}])
+        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:"31/01/2017"}).and_return([{possId:0, net:10}])
 
         Matrix.new.start
 
@@ -140,12 +141,12 @@ describe Matrix do
         expect(data_loader).to have_received(:close)
 
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, possId:0})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(OpeningV1).not_to receive(:new)
         expect(matrix_db).not_to receive(:insert_one)
         expect(matrix_db).to have_received(:close).twice
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, date:"31/01/2017"})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:"31/01/2017"})
       end
     end
 
@@ -153,21 +154,21 @@ describe Matrix do
       it "runs the default strategy, but do nothing because the given trading day doesnt exists" do
         trading_day = "01/02/2017"
 
-        allow(matrix_db).to receive(:find).with({strategy_name:strategy_name, date:trading_day}).and_return([{possId:0, net:10}])
+        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:trading_day}).and_return([{possId:0, net:10}])
         Matrix.new.start({trading_days:[trading_day]})
 
         expect(Reporter).to have_received(:by_possibility)
         expect(DataLoader).to have_received(:fetch_trading_days).with("WDO")
         expect(data_loader).not_to receive(:close)
 
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
-        expect(matrix_db).not_to receive(:find).with({strategy_name:strategy_name, date:trading_day})
-        expect(matrix_db).not_to receive(:find).with({strategy_name:strategy_name, possId:0})
+        expect(matrix_db).not_to receive(:find).with({strategy_name:strat_equity, date:trading_day})
+        expect(matrix_db).not_to receive(:find).with({strategy_name:strat_equity, possId:0})
         expect(OpeningV1).not_to receive(:new)
         expect(matrix_db).not_to receive(:insert_one)
         expect(matrix_db).to have_received(:close).once
-        expect(matrix_db).not_to receive(:find).with({strategy_name:strategy_name, date:"31/01/2017"})
+        expect(matrix_db).not_to receive(:find).with({strategy_name:strat_equity, date:"31/01/2017"})
       end
     end
 
@@ -177,7 +178,7 @@ describe Matrix do
         other_day = "01/02/2017"
 
         allow(DataLoader).to receive(:fetch_trading_days).and_return([file_name, other_file_name])
-        allow(matrix_db).to receive(:find).with({strategy_name:strategy_name, date:trading_day}).and_return([])
+        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:trading_day}).and_return([])
         Matrix.new.start({trading_days:[trading_day]})
 
         expect(Reporter).to have_received(:by_possibility)
@@ -186,16 +187,16 @@ describe Matrix do
         expect(data_loader).to have_received(:close)
 
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
-        expect(matrix_poss_db).to have_received(:find).with({"name":strategy_name})
+        expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
 
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, date:trading_day})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
 
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, possId:0})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(matrix_db).to have_received(:insert_one)
         expect(matrix_db).to have_received(:close).twice
 
-        expect(matrix_db).to have_received(:find).with({strategy_name:strategy_name, date:trading_day})
-        expect(matrix_db).not_to receive(:find).with({strategy_name:strategy_name, date:other_day})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
+        expect(matrix_db).not_to receive(:find).with({strategy_name:strat_equity, date:other_day})
       end
     end
   end

@@ -7,71 +7,88 @@ class Strategy
 
   def initialize(possibility, tic_value, time, hist, openning, formated_date)
 
-    self.stop = possibility[:stop]
-    self.gains = possibility.select {|k,v| k.to_s =~ /^gain_\d+$/ }.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
-    self.start = possibility[:start]
-    self.total_loss = possibility[:total_loss]
-    self.total_gain = possibility[:total_gain]
-    self.breakeven = possibility[:breakeven]
-    self.one_shot = possibility[:one_shot]
-    self.position_size = 0
-    self.current = nil
-    self.last = nil
-    self.openning = openning
-    self.position = :liquid
-    self.tic_val = tic_value
-    self.net = 0
-    self.qty_trades = 0
-    self.limit_time = time
-    self.historic = hist
-    self.formated_date = formated_date
-    self.visual = false
-    self.allowed = true
+    @stop = possibility[:stop]
+    @gains = possibility.select {|k,v| k.to_s =~ /^gain_\d+$/ }.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+    @start = possibility[:start]
+    @total_loss = possibility[:total_loss]
+    @total_gain = possibility[:total_gain]
+    @breakeven = possibility[:breakeven]
+    @one_shot = possibility[:one_shot]
+    @position_size = 0
+    @current = nil
+    @last = nil
+    @openning = openning
+    @position = :liquid
+    @tic_val = tic_value
+    @net = 0
+    @qty_trades = 0
+    @limit_time = time
+    @historic = hist
+    @formated_date = formated_date
+    @visual = false
+    @allowed = true
   end
 
   def debug(line)
     puts line if visual
   end
 
+  def was_last_tt?
+    (@position == :liquid && @current.date.hour >= @limit_time) || risky? || exit_on_one_shot?
+  end
+
   def risky?
-    return self.net >= self.total_gain || self.net <= self.total_loss
+    return @net >= @total_gain || @net <= @total_loss
   end
 
   def exit_on_one_shot?
-    return self.one_shot && qty_trades > 0 && self.position == :liquid
+    return @one_shot && qty_trades > 0 && @position == :liquid
   end
 
   def enter_position(position_type)
     return if risky?
 
-    self.position = position_type
-    self.position_val = self.current.value
-    self.position_size = gains.size
-    self.allowed = false
-    self.qty_trades += 1
-    debug "ENTROU na posição lado: #{self.position} - preco #{self.position_val} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+    @position = position_type
+    @position_val = @current.value
+    @position_size = gains.size
+    @allowed = false
+    @qty_trades += 1
+    debug "ENTROU na posição lado: #{@position} - preco #{@position_val} - horario #{@current.date.hour}:#{@current.date.minute}"
   end
 
   def close_position
-    self.position_size = 0
-    self.position_val = nil
-    self.position = :liquid
+    @position_size = 0
+    @position_val = nil
+    @position = :liquid
   end
 
-  def take_profit
-    self.net += (self.current.value - self.position_val).abs * self.tic_val
-    self.position_size -= 1 if self.position_size > 0
-    debug  "   Take profit net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+  def take_profit(factor=nil)
+    profit = (@current.value - @position_val).abs * @tic_val
+    profit = profit * factor if factor
+
+    @net += profit
+    @position_size -= 1 if @position_size > 0
+    debug  "   Take profit net #{@net} - preco #{@current.value} - horario #{@current.date.hour}:#{@current.date.minute}"
   end
 
-  def take_loss(flip=false)
-    last_position = self.position
-    self.net -= ((self.position_val - self.current.value).abs * self.tic_val * self.position_size).abs
+  def take_loss(flip=false,factor=nil)
+    last_position = @position
+
+    spread = (@position_val - @current.value).abs * @tic_val
+    loss = (spread * @position_size).abs
+    if factor
+      loss = 0
+      factor.each do |key, mult|
+        loss += spread * mult
+      end
+    end
+
+    @net -= loss
     close_position
 
-    debug "   STOP net #{self.net} - preco #{self.current.value} - horario #{self.current.date.hour}:#{self.current.date.minute}"
+    debug "   STOP net #{@net} - preco #{@current.value} - horario #{@current.date.hour}:#{@current.date.minute}"
     return if !flip
-    if(self.current.date.hour < self.limit_time)
+    if(@current.date.hour < @limit_time && !@one_shot)
       debug "   Fliping"
       enter_position(:long) if(last_position == :short)
       enter_position(:short) if(last_position == :long)
@@ -79,7 +96,7 @@ class Strategy
   end
 
   def ensure_breakeven
-    debug "   Breakeven second contract on #{self.position_val}"
+    debug "   Breakeven activated contract on #{@position_val}"
     take_loss(false)
   end
 

@@ -3,110 +3,172 @@ require './lib/inputs'
 
 class OpeningPullbackV1 < Strategy
 
-  def run_strategy
-    self.allowed = true
+  attr_accessor :pullback, :await_pullback, :mults, :done_gains
 
-    self.historic.each_with_index do |tt, i|
-      self.last = self.current
+  PULLBACK_STATUS = [:await, :pb_long, :pb_short].freeze
 
-      self.current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+  def initialize(possibility, tic_value, time, hist, openning, formated_date)
+    super(possibility, tic_value, time, hist, openning, formated_date)
+    @pullback = possibility[:pullback]
+    @await_pullback = :await
 
-      if ((self.position == :liquid && self.current.date.hour >= self.limit_time) || risky? || exit_on_one_shot?)
-        break
-      end
-
-      if(self.position == :liquid && !self.allowed)
-        if (self.current.value >= self.openning && self.last.value < self.openning) ||
-           (self.current.value <= self.openning && self.last.value > self.openning)
-
-          self.allowed = true
-        end
-      end
-
-      if (self.position == :liquid && self.current.value >= (self.openning + self.start) && self.allowed)
-        enter_position :long
-        next
-      end
-
-      if (self.position == :liquid && self.current.value <= (self.openning - self.start) && self.allowed)
-        enter_position :short
-        next
-      end
-
-      if(self.position == :long)
-
-        if(self.current.value >= (self.position_val + self.gains[:gain_1]) && self.position_size == 2) #contrato 1
-          take_profit
-        end
-
-        if(self.current.value >= (self.position_val + self.gains[:gain_2]) && self.position_size == 1) #contrato 2
-          take_profit
-          close_position
-        end
-
-        if(self.current.value <= (self.openning - self.stop))
-          take_loss(true)
-        end
-
-        if(self.breakeven && self.position_size == 1 && (self.current.value <= self.position_val ))
-          ensure_breakeven
-        end
-      end
-
-      if(self.position == :short)
-
-        if(self.current.value <= (self.position_val - self.gains[:gain_1]) && self.position_size == 2) #contrato 1
-          take_profit
-        end
-
-        if(self.current.value <= (self.position_val - self.gains[:gain_2]) && self.position_size == 1) #contrato 2
-          take_profit
-          close_position
-        end
-
-        if(self.current.value >= (self.openning + self.stop))
-          take_loss(true)
-        end
-
-        if(self.breakeven && self.position_size == 1 && (self.current.value >= self.position_val))
-          ensure_breakeven
-        end
-      end
-
-    end
-
-    if(self.position != :liquid)
-      if((self.position_val >= self.current.value && self.position == :long) ||
-        (self.position_val <= self.current.value && self.position == :short))
-        self.position_size.times { take_profit }
-        close_position
-      else
-        take_loss(false)
-      end
-    end
-    debug "Fim da execução Net: #{self.net} - horario #{self.current.date.hour} - position #{self.position} - setup: #{self.poss}"
-    print "."
-
-    self.net
+    @mults = possibility.select {|k,v| k.to_s =~ /^mult_\d+$/ }.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+    @gains.each_with_index { |h,i| @mults["mult_#{i+1}".to_sym] = get_gain_factor(h[0]) }
+    @done_gains = []
+    @one_shot = true
   end
 
-  def self.create_inputs
-    stops = (1..5).to_a
-    start = (1..5).to_a
-    gain_1 = (1..5).to_a
-    gain_2 = (5..8).to_a
-    total_loss = [-100, -150, -200, -250]
-    total_gain = [100, 150, 200, 250]
-    breakeven = [true, false]
-    one_shot = [true, false]
+  def reached_start?(position, current_value, openning, start, allowed)
+  end
 
-    possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
-    possibilities = Inputs.combine_array_map(stops, possibilities, :start)
-    possibilities = Inputs.combine_array_map(start, possibilities, :stop)
-    possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
-    possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
-    possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
-    possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shot)
+  def flip_allowed?
+    (@current.value >= @openning && @last.value < @openning) || (@current.value <= @openning && @last.value > @openning)
+  end
+
+  def get_gain_index(gain_sym)
+    gain_sym.to_s.scan(/^gain_(\d+)/).flatten.first
+  end
+
+  def get_gain_factor(gain_sym)
+    index = get_gain_index(gain_sym)
+    multi_sym = "mult_#{index}".to_sym
+    @mults[multi_sym] || 1
+  end
+
+  def do_take_profit(gain_sym)
+    factor = get_gain_factor(gain_sym)
+    take_profit(factor)
+    @mults.delete("mult_#{get_gain_index(gain_sym)}".to_sym)
+
+    @done_gains << gain_sym
+    close_position if @position_size == 0
+  end
+
+  def run_strategy
+    @allowed = true
+
+    @historic.each_with_index do |tt, i|
+      @last = @current
+
+      @current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+
+      break if was_last_tt?
+
+      if(@position == :liquid && !@allowed)
+        @allowed = true if flip_allowed?
+      end
+
+      if(@position == :liquid)
+        if @await_pullback.nil? || @await_pullback == :await
+          if (@position == :liquid && @current.value >= (@openning + @start) && @allowed)
+            @await_pullback = :pb_long
+          end
+          if (@position == :liquid && @current.value <= (@openning - @start) && @allowed)
+            @await_pullback = :pb_short
+          end
+        else
+          if(@await_pullback == :pb_long && @current.value <= ((@openning + @start) - @pullback))
+            enter_position :long
+          end
+          if(@await_pullback == :pb_short && @current.value >= ((@openning - @start) + @pullback))
+            enter_position :short
+          end
+        end
+        next
+      end
+
+      if(@position == :long)
+        @gains.each do |key, value|
+          if @current.value >= (@position_val + value) && !@done_gains.include?(key)
+            do_take_profit(key)
+          end
+        end
+
+        next if @position_size == 0
+
+        if @current.value <= (@openning - @stop)
+          take_loss(false, @mults)
+          next
+        end
+
+        if @position_size != @gains.size && (@current.value <= @position_val)
+          take_loss(false, @mults)
+        end
+      end
+
+      if(@position == :short)
+        @gains.each do |key, value|
+          if @current.value <= (@position_val - value) && !@done_gains.include?(key)
+            do_take_profit(key)
+          end
+        end
+
+        next if @position_size == 0
+
+        if @current.value >= (@openning + @stop)
+          take_loss(false, @mults)
+          next
+        end
+
+        if @position_size != @gains.size && (@current.value >= @position_val)
+          take_loss(false, @mults)
+        end
+      end
+
+    end
+
+    if(@position != :liquid)
+      if((@current.value >= @position_val && @position == :long) ||
+        (@current.value <= @position_val && @position == :short))
+
+        @gains.each do |key, value|
+          if !@done_gains.include?(key)
+            do_take_profit(key)
+          end
+        end
+      else
+        take_loss(false, @mults)
+      end
+    end
+    debug "Fim da execução Net: #{@net} - horario #{@current.date.hour} - position #{@position} - setup: #{@poss}"
+    print "."
+
+    @net
+  end
+
+  def self.create_inputs(equity="WDO")
+    possibilities = []
+
+    if equity == "WDO"
+      start = (2..5).to_a
+      pullback = (2..4).to_a
+      stop = (1..5).to_a
+      gain_1 = (2..4).to_a
+      gain_2 = (2..6).to_a
+      gain_3 = (4..8).to_a
+      gain_4 = (4..10).to_a
+      total_loss = [-10000]
+      total_gain = [10000]
+      mult_1 = [6]
+      mult_2 = [2]
+
+      possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
+      possibilities = Inputs.combine_array_map(gain_3,     possibilities, :gain_3)
+      possibilities = Inputs.combine_array_map(gain_4,     possibilities, :gain_4)
+      possibilities = Inputs.combine_array_map(start,      possibilities, :start)
+      possibilities = Inputs.combine_array_map(stop,       possibilities, :stop)
+      possibilities = Inputs.combine_array_map(pullback,   possibilities, :pullback)
+      possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
+      possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
+      #possibilities = Inputs.combine_array_map(mult_1, possibilities, :mult_1)
+      #possibilities = Inputs.combine_array_map(mult_2, possibilities, :mult_2)
+
+      possibilities.delete_if do |poss|
+        total_gain = (poss[:gain_1] + poss[:gain_2] + poss[:gain_3] + poss[:gain_4]) * 10
+        total_loss = ((poss[:start] - poss[:pullback]) + (poss[:stop]*4)) * 10
+        total_gain < total_loss
+      end
+    end
 
     possibilities
   end

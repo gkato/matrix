@@ -3,90 +3,88 @@ require './lib/strategy'
 class OpeningV1 < Strategy
 
   def run_strategy
-    self.allowed = true
+    @allowed = true
 
-    self.historic.each_with_index do |tt, i|
-      self.last = self.current
+    @historic.each_with_index do |tt, i|
+      @last = @current
 
-      self.current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      @current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
 
-      if ((self.position == :liquid && self.current.date.hour >= self.limit_time) || risky? || exit_on_one_shot?)
-        break
-      end
+      break if was_last_tt?
 
-      if(self.position == :liquid && !self.allowed)
-        if (self.current.value >= self.openning && self.last.value < self.openning) ||
-           (self.current.value <= self.openning && self.last.value > self.openning)
+      if(@position == :liquid && !@allowed)
+        if (@current.value >= @openning && @last.value < @openning) ||
+           (@current.value <= @openning && @last.value > @openning)
 
-          self.allowed = true
+          @allowed = true
         end
       end
 
-      if (self.position == :liquid && self.current.value >= (self.openning + self.start) && self.allowed)
+      if (@position == :liquid && @current.value >= (@openning + @start) && @allowed)
         enter_position :long
         next
       end
 
-      if (self.position == :liquid && self.current.value <= (self.openning - self.start) && self.allowed)
+      if (@position == :liquid && @current.value <= (@openning - @start) && @allowed)
         enter_position :short
         next
       end
 
-      if(self.position == :long)
+      if(@position == :long)
 
-        if(self.current.value >= (self.position_val + self.gains[:gain_1]) && self.position_size == 2) #contrato 1
+        if(@current.value >= (@position_val + @gains[:gain_1]) && @position_size == 2) #contrato 1
           take_profit
         end
 
-        if(self.current.value >= (self.position_val + self.gains[:gain_2]) && self.position_size == 1) #contrato 2
+        if(@current.value >= (@position_val + @gains[:gain_2]) && @position_size == 1) #contrato 2
           take_profit
           close_position
         end
 
-        if(self.current.value <= (self.openning - self.stop))
+        if(@current.value <= (@openning - @stop))
           take_loss(true)
         end
 
-        if(self.breakeven && self.position_size == 1 && (self.current.value <= self.position_val ))
+        if(@breakeven && @position_size == 1 && (@current.value <= @position_val ))
           ensure_breakeven
         end
       end
 
-      if(self.position == :short)
+      if(@position == :short)
 
-        if(self.current.value <= (self.position_val - self.gains[:gain_1]) && self.position_size == 2) #contrato 1
+        if(@current.value <= (@position_val - @gains[:gain_1]) && @position_size == 2) #contrato 1
           take_profit
         end
 
-        if(self.current.value <= (self.position_val - self.gains[:gain_2]) && self.position_size == 1) #contrato 2
+        if(@current.value <= (@position_val - @gains[:gain_2]) && @position_size == 1) #contrato 2
           take_profit
           close_position
         end
 
-        if(self.current.value >= (self.openning + self.stop))
+        if(@current.value >= (@openning + @stop))
           take_loss(true)
         end
 
-        if(self.breakeven && self.position_size == 1 && (self.current.value >= self.position_val))
+        if(@breakeven && @position_size == 1 && (@current.value >= @position_val))
           ensure_breakeven
         end
       end
 
     end
 
-    if(self.position != :liquid)
-      if((self.position_val >= self.current.value && self.position == :long) ||
-        (self.position_val <= self.current.value && self.position == :short))
-        self.position_size.times { take_profit }
+    if(@position != :liquid)
+      if((@current.value >= @position_val && @position == :long) ||
+        (@current.value <= @position_val && @position == :short))
+        @position_size.times { take_profit }
         close_position
       else
         take_loss(false)
       end
     end
-    debug "Fim da execução Net: #{self.net} - horario #{self.current.date.hour} - position #{self.position} - setup: #{self.poss}"
+    debug "Fim da execução Net: #{@net} - horario #{@current.date.hour} - position #{@position} - setup: #{@poss}"
     print "."
 
-    self.net
+    @net
   end
 
   def self.create_inputs
