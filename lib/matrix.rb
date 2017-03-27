@@ -5,6 +5,7 @@ require_relative "../lib/inputs"
 require_relative "../lib/data_loader"
 require_relative "../lib/reporter"
 require_relative "../lib/strategies/opening_v1"
+require_relative "../lib/strategies/opening_pullback_v1"
 
 class Matrix
 
@@ -17,6 +18,8 @@ class Matrix
     ticval = opts[:tic_val] || 10
     time_limit = opts[:time_limit] || 11
     allowed_days = opts[:trading_days] || []
+
+    puts "Executando estratégia: #{strategy_name}, ativo #{equity}"
 
     strategy_clazz = Object.const_get(strategy_name.split('_').collect(&:capitalize).join)
     matrix_db = MatrixDB.new(['localhost'], database:"matrix")

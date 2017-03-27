@@ -79,7 +79,8 @@ class OpeningPullbackV1 < Strategy
 
       if(@position == :long)
         @gains.each do |key, value|
-          if @current.value >= (@position_val + value) && !@done_gains.include?(key)
+          next if @done_gains.include?(key)
+          if @current.value >= (@position_val + value)
             do_take_profit(key)
           end
         end
@@ -98,7 +99,8 @@ class OpeningPullbackV1 < Strategy
 
       if(@position == :short)
         @gains.each do |key, value|
-          if @current.value <= (@position_val - value) && !@done_gains.include?(key)
+          next if @done_gains.include?(key)
+          if @current.value <= (@position_val - value)
             do_take_profit(key)
           end
         end
@@ -153,8 +155,8 @@ class OpeningPullbackV1 < Strategy
       mult_2 = [2]
 
       possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
-      possibilities = Inputs.combine_array_map(gain_3,     possibilities, :gain_3)
-      possibilities = Inputs.combine_array_map(gain_4,     possibilities, :gain_4)
+      #possibilities = Inputs.combine_array_map(gain_3,     possibilities, :gain_3)
+      #possibilities = Inputs.combine_array_map(gain_4,     possibilities, :gain_4)
       possibilities = Inputs.combine_array_map(start,      possibilities, :start)
       possibilities = Inputs.combine_array_map(stop,       possibilities, :stop)
       possibilities = Inputs.combine_array_map(pullback,   possibilities, :pullback)
@@ -164,12 +166,16 @@ class OpeningPullbackV1 < Strategy
       #possibilities = Inputs.combine_array_map(mult_2, possibilities, :mult_2)
 
       possibilities.delete_if do |poss|
-        total_gain = (poss[:gain_1] + poss[:gain_2] + poss[:gain_3] + poss[:gain_4]) * 10
-        total_loss = ((poss[:start] - poss[:pullback]) + (poss[:stop]*4)) * 10
-        total_gain < total_loss
+        #total_gain = (poss[:gain_1] + poss[:gain_2] + poss[:gain_3] + poss[:gain_4]) * 10
+        #total_loss = ((poss[:start] - poss[:pullback]) + (poss[:stop]*4)) * 10
+
+        total_gain = (poss[:gain_1] + poss[:gain_2]) * 10
+        total_loss = ((poss[:start] - poss[:pullback] + poss[:stop])*2) * 10
+
+        #(total_gain <  total_loss) || !((poss[:pullback] <= poss[:start]) && (poss[:gain_1] <= poss[:gain_2]) && (poss[:gain_2] <= poss[:gain_3]) && (poss[:gain_3] <= poss[:gain_4]))
+        (total_gain <  total_loss) || !((poss[:pullback] <= poss[:start]) && (poss[:gain_1] <= poss[:gain_2]))
       end
     end
-
     possibilities
   end
 end
