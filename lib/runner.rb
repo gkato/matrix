@@ -13,9 +13,11 @@ elsif
   trading_days = ARGV.first.scan(/trading_days:\[(.*?)\]/).flatten.first.split("\,") rescue []
   visual = ARGV.first.scan(/visual:(true|false)/).flatten.first rescue nil
   strategy_name = ARGV.first.scan(/strategy_name:(([a-z]+_)+v\d+)/).flatten.first rescue nil
+  equity = ARGV.first.scan(/equity:([A-Z]+)/).flatten.first rescue nil
 
   opts[:trading_days] = trading_days if !trading_days.empty?
   opts[:visual] = visual if visual
+  opts[:equity] = equity if equity
   opts[:strategy_name] = strategy_name if strategy_name
 
   Matrix.new.start(opts)

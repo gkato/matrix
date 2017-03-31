@@ -15,7 +15,7 @@ class Matrix
     threads_days = opts[:threads_days] || 10
     threads_poss = opts[:threads_poss] || 20
     visual = opts[:visual] || false
-    ticval = opts[:tic_val] || 10
+    ticval = ticval_discover(equity)
     time_limit = opts[:time_limit] || 11
     allowed_days = opts[:trading_days] || []
 
@@ -75,6 +75,16 @@ class Matrix
     matrix_db.close
   end
 
+  def equity_from_strat(strat_equity)
+    return nil if strat_equity.nil?
+    strat_equity.scan(/.*(WIN|WDO)/).flatten.first rescue nil
+  end
+
+  def ticval_discover(equity="WDO")
+    return 10 if equity.nil? || equity == "WDO"
+    return 1 if equity == "WIN"
+  end
+
   def date_from_file(file, equity)
     file.scan(/#{equity}.*_Trade_(.*)\.csv/).flatten.first.gsub("-","/")
   end
@@ -97,8 +107,9 @@ class Matrix
   def create_posssibilities(matrix_db, strat_equity)
     possibilities = (matrix_db.on(:possibilities).find({"name":strat_equity}) || []).to_a
 
+    equity = equity_from_strat(strat_equity)
     if possibilities.empty?
-      possibilities = get_strategy_class(strat_equity).create_inputs
+      possibilities = get_strategy_class(strat_equity).create_inputs(equity)
       possibilities.each_with_index do |poss, i|
         poss[:possId] = i
         poss[:name] = strat_equity

@@ -25,6 +25,54 @@ describe Matrix do
     allow(OpeningV1).to receive(:create_inputs).and_return(possibilities)
   end
 
+  describe "#ticval_discover" do
+    context "ginven the equity WDO" do
+      it "returns 10 as ticval" do
+        ticval = Matrix.new.ticval_discover("WDO")
+        expect(ticval).to eq(10)
+      end
+    end
+    context "ginven the equity WIN" do
+      it "returns 1 as ticval" do
+        ticval = Matrix.new.ticval_discover("WIN")
+        expect(ticval).to eq(1)
+      end
+    end
+    context "ginven no equity" do
+      it "returns 10 as ticval" do
+        ticval = Matrix.new.ticval_discover
+        expect(ticval).to eq(10)
+      end
+    end
+    context "ginven nil as equity" do
+      it "returns 10 as ticval" do
+        ticval = Matrix.new.ticval_discover(nil)
+        expect(ticval).to eq(10)
+      end
+    end
+  end
+
+  describe "#equity_from_strat" do
+    context "given an strat_equity opening_v1_WDO" do
+      it "returs WDO as equity" do
+        equity = Matrix.new.equity_from_strat("opening_v1_WDO")
+        expect(equity).to eq("WDO")
+      end
+    end
+    context "given an strat_equity opening_pullback_v1_WIN" do
+      it "returs WIN as equity" do
+        equity = Matrix.new.equity_from_strat("opening_pullback_v1_WIN")
+        expect(equity).to eq("WIN")
+      end
+    end
+    context "given an strat_equity opening_v1 (whithout equity)" do
+      it "returs nil as equity" do
+        equity = Matrix.new.equity_from_strat("opening_v1")
+        expect(equity).to eq(nil)
+      end
+    end
+  end
+
   describe "#run_results" do
     context "given a possibilities and all results processed" do
       it "prepare and show results" do

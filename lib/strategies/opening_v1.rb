@@ -87,7 +87,7 @@ class OpeningV1 < Strategy
     @net
   end
 
-  def self.create_inputs
+  def self.create_inputs(equity="WDO")
     stops = (1..5).to_a
     start = (1..5).to_a
     gain_1 = (1..5).to_a
