@@ -38,7 +38,7 @@ describe DataLoader do
       it "returns a historical data from file, sliced by time and the openning price, and saves into database" do
         allow(matrix_db).to receive(:find).with(dayId:"WDOH17_Trade_31-01-2017").and_return([])
 
-        result = DataLoader.new({}).load(file_name)
+        result = DataLoader.new.load(file_name)
         expect(result[:openning]).to eq(3152)
 
         expect(result[:tt].first[:value]).to eq(3151.5)
@@ -58,7 +58,7 @@ describe DataLoader do
         allow(matrix_db).to receive(:find).with(dayId:"WDOH17_Trade_31-01-2017").and_return([foo_historic])
         allow(matrix_tt_db).to receive(:find).with(dayId:"WDOH17_Trade_31-01-2017").and_return([foo_tt])
 
-        result = DataLoader.new({}).load(file_name)
+        result = DataLoader.new.load(file_name)
         expect(matrix_db).to have_received(:on).with(:trading_days)
         expect(matrix_db).to have_received(:find).with(dayId:"WDOH17_Trade_31-01-2017")
         expect(result).to eq(foo_historic)
@@ -74,7 +74,7 @@ describe DataLoader do
 
     context "Given an instance of DataLoader with a matrix DB connection" do
       it "closes DB connection" do
-        DataLoader.new({}).close
+        DataLoader.new.close
         expect(matrix_db).to have_received(:close)
       end
     end

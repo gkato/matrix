@@ -1,7 +1,10 @@
 require 'models/matrix_db'
 
 describe MatrixDB do
-  let(:matrix_db) { MatrixDB.new(["127.0.0.1"], database:"matrix_test") }
+  let(:matrix_db) do
+    $conf = YAML::load_file(File.join(ENV["PWD"], 'conf.yml'))
+    MatrixDB.new(env:"test")
+  end
 
   before do
     matrix_db.on(:test).delete

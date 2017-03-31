@@ -22,7 +22,7 @@ class ContainerV1
     puts "Executando estratégia: #{strategy_name}, ativo #{equity}"
 
     strategy_clazz = Object.const_get(strategy_name.split('_').collect(&:capitalize).join)
-    matrix_db = MatrixDB.new(['localhost'], database:"matrix")
+    matrix_db = MatrixDB.new
 
     strat_equity = "#{strategy_name}_#{equity}"
     possibilities = create_posssibilities(matrix_db, strat_equity)
@@ -38,8 +38,8 @@ class ContainerV1
 
     start = Time.now
     Parallel.each(trading_days, in_threads: 1) do |file|
-      data_loader = DataLoader.new(hosts:['localhost'], database:"matrix")
-      result_db = MatrixDB.new(['localhost'], database:"matrix")
+      data_loader = DataLoader.new
+      result_db = MatrixDB.new
 
       formated_date = date_from_file(file, equity)
       done_possibilities = (result_db.on(:results).find({strategy_name:strat_equity, date:formated_date}) || []).to_a
@@ -94,7 +94,7 @@ class ContainerV1
   end
 
   def run_results(strat_equity, opts={})
-    matrix_db = MatrixDB.new(['localhost'], database:"matrix")
+    matrix_db = MatrixDB.new
 
     possibilities = create_posssibilities(matrix_db, strat_equity)
     possibilities = possibilities.find_all {|poss| poss[:possId] == opts[:possId]  } if opts[:possId]

@@ -1,0 +1,10 @@
+mongo:
+  test:
+    host: 'localhost'
+    database: 'matrix_test'
+  qa:
+    host: 'localhost'
+    database: 'matrix_qa'
+  production:
+    host: 'localhost'
+    database: 'matrix'

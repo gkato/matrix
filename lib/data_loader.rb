@@ -6,8 +6,8 @@ class DataLoader
 
   attr_accessor :matrix_db, :files
 
-  def initialize(confs)
-    self.matrix_db = MatrixDB.new(confs[:hosts], database:confs[:database])
+  def initialize
+    @matrix_db = MatrixDB.new
   end
 
   def load(file)
@@ -15,9 +15,9 @@ class DataLoader
     dayId = file.gsub(".csv", "")
     historic = []
 
-    trading_day = (matrix_db.on(:trading_days).find(dayId:dayId) || []).first
+    trading_day = (@matrix_db.on(:trading_days).find(dayId:dayId) || []).first
     if trading_day
-      historic = matrix_db.on(:times_trades).find(dayId:dayId)
+      historic = @matrix_db.on(:times_trades).find(dayId:dayId)
       trading_day[:tt] = historic.to_a.sort {|a,b| a[:date] <=> b[:date]}
       puts "Data loaded for file #{file}"
       return trading_day
@@ -55,8 +55,8 @@ class DataLoader
 
     trading_day = { dayId:dayId, date:day, openning:openning }
 
-    matrix_db.on(:times_trades).insert_many(historic)
-    matrix_db.on(:trading_days).insert_one(trading_day)
+    @matrix_db.on(:times_trades).insert_many(historic)
+    @matrix_db.on(:trading_days).insert_one(trading_day)
 
     trading_day[:tt] = historic
 
@@ -65,7 +65,7 @@ class DataLoader
   end
 
   def close
-    matrix_db.close
+    @matrix_db.close
   end
 
   def self.fetch_trading_days(file_pattern)
