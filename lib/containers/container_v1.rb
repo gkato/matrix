@@ -1,12 +1,13 @@
 require 'parallel'
 require 'date'
 
-require_relative "../lib/inputs"
-require_relative "../lib/data_loader"
-require_relative "../lib/reporter"
-require_relative "../lib/strategies/opening_v1"
+require_relative "../inputs"
+require_relative "../data_loader"
+require_relative "../reporter"
+require_relative "../strategies/opening_v1"
+require_relative "../strategies/opening_pullback_v1"
 
-class Matrix
+class ContainerV1
 
   def start(opts={})
     strategy_name = opts[:strategy_name] || "opening_v1"
@@ -14,14 +15,17 @@ class Matrix
     threads_days = opts[:threads_days] || 10
     threads_poss = opts[:threads_poss] || 20
     visual = opts[:visual] || false
-    ticval = opts[:tic_val] || 10
+    ticval = ticval_discover(equity)
     time_limit = opts[:time_limit] || 11
     allowed_days = opts[:trading_days] || []
+
+    puts "Executando estratégia: #{strategy_name}, ativo #{equity}"
 
     strategy_clazz = Object.const_get(strategy_name.split('_').collect(&:capitalize).join)
     matrix_db = MatrixDB.new(['localhost'], database:"matrix")
 
-    possibilities = create_posssibilities(matrix_db, strategy_name)
+    strat_equity = "#{strategy_name}_#{equity}"
+    possibilities = create_posssibilities(matrix_db, strat_equity)
 
     trading_days = DataLoader.fetch_trading_days(equity)
     trading_days = trading_days.select { |file| allowed_days.empty? || allowed_days.include?(date_from_file(file, equity)) }
@@ -38,7 +42,8 @@ class Matrix
       result_db = MatrixDB.new(['localhost'], database:"matrix")
 
       formated_date = date_from_file(file, equity)
-      done_possibilities = (result_db.on(:results).find({strategy_name:strategy_name, date:formated_date}) || []).to_a
+      done_possibilities = (result_db.on(:results).find({strategy_name:strat_equity, date:formated_date}) || []).to_a
+
       if done_possibilities.size != possibilities.size
         done_ids = done_possibilities.map {|i| i[:possId]}
         poss_to_process = possibilities.select {|i| !done_ids.include?(i[:possId])}
@@ -65,9 +70,19 @@ class Matrix
     diff = Time.now- start
     puts "Tooks #{diff}ms"
 
-    prepare_results(possibilities, matrix_db, strategy_name)
+    #prepare_results(possibilities, matrix_db, strat_equity)
 
     matrix_db.close
+  end
+
+  def equity_from_strat(strat_equity)
+    return nil if strat_equity.nil?
+    strat_equity.scan(/.*(WIN|WDO)/).flatten.first rescue nil
+  end
+
+  def ticval_discover(equity="WDO")
+    return 10 if equity.nil? || equity == "WDO"
+    return 1 if equity == "WIN"
   end
 
   def date_from_file(file, equity)
@@ -75,28 +90,29 @@ class Matrix
   end
 
   def get_strategy_class(strategy_name)
-    Object.const_get(strategy_name.split('_').collect(&:capitalize).join)
+    Object.const_get(strategy_name.gsub(/_(WDO|WIN)/,'').split('_').collect(&:capitalize).join)
   end
 
-  def run_results(strategy_name, opts={})
+  def run_results(strat_equity, opts={})
     matrix_db = MatrixDB.new(['localhost'], database:"matrix")
 
-    possibilities = create_posssibilities(matrix_db, strategy_name)
+    possibilities = create_posssibilities(matrix_db, strat_equity)
     possibilities = possibilities.find_all {|poss| poss[:possId] == opts[:possId]  } if opts[:possId]
     #possibilities = [{possId:"current", :breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5, one_shot:true}]
-    prepare_results(possibilities, matrix_db, strategy_name)
+    prepare_results(possibilities, matrix_db, strat_equity)
 
     matrix_db.close
   end
 
-  def create_posssibilities(matrix_db, strategy_name)
-    possibilities = (matrix_db.on(:possibilities).find({"name":strategy_name}) || []).to_a
+  def create_posssibilities(matrix_db, strat_equity)
+    possibilities = (matrix_db.on(:possibilities).find({"name":strat_equity}) || []).to_a
 
+    equity = equity_from_strat(strat_equity)
     if possibilities.empty?
-      possibilities = get_strategy_class(strategy_name).create_inputs
+      possibilities = get_strategy_class(strat_equity).create_inputs(equity)
       possibilities.each_with_index do |poss, i|
         poss[:possId] = i
-        poss[:name] = strategy_name
+        poss[:name] = strat_equity
       end
 
       matrix_db.on(:possibilities).insert_many(possibilities)
@@ -104,12 +120,12 @@ class Matrix
     possibilities
   end
 
-  def prepare_results(possibilities, matrix_db, strategy_name)
+  def prepare_results(possibilities, matrix_db, strat_equity)
     puts "Preparing results.."
 
     possibilities = (possibilities || []).to_a
     possibilities.each do |poss|
-      poss[:per_day] = (matrix_db.on(:results).find({strategy_name:strategy_name, possId:poss[:possId]}) || []).to_a
+      poss[:per_day] = (matrix_db.on(:results).find({strategy_name:strat_equity, possId:poss[:possId]}) || []).to_a
       poss[:net] = 0
       poss[:per_day].each do |per_day|
         poss[:net] += per_day[:net]

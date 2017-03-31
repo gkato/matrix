@@ -1,14 +1,14 @@
-require_relative "matrix"
+require_relative "./containers/container_v1"
 
 opts={}
 
 if ARGV.first == "results"
-  strat_equity = "opening_WDO"
+  strat_equity = "opening_v1_WDO"
   if ARGV[1]
     opts[:possId] = (ARGV[1].scan(/possId:(\d+)/).flatten.first.to_i rescue nil) if ARGV[1] =~ /possId/
     strat_equity = ((ARGV[1].scan(/strat_equity:(.*[A-Z]+)/).flatten.first rescue nil) || strat_equity)
   end
-  Matrix.new.run_results(strat_equity, opts)
+  ContainerV1.new.run_results(strat_equity, opts)
 elsif
   trading_days = ARGV.first.scan(/trading_days:\[(.*?)\]/).flatten.first.split("\,") rescue []
   visual = ARGV.first.scan(/visual:(true|false)/).flatten.first rescue nil
@@ -20,5 +20,5 @@ elsif
   opts[:equity] = equity if equity
   opts[:strategy_name] = strategy_name if strategy_name
 
-  Matrix.new.start(opts)
+  ContainerV1.new.start(opts)
 end
