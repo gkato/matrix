@@ -88,22 +88,33 @@ class OpeningV1 < Strategy
   end
 
   def self.create_inputs(equity="WDO")
-    stops = (1..5).to_a
-    start = (1..5).to_a
-    gain_1 = (1..5).to_a
-    gain_2 = (5..8).to_a
-    total_loss = [-100, -150, -200, -250]
-    total_gain = [100, 150, 200, 250]
-    breakeven = [true, false]
-    one_shot = [true, false]
+    possibilities = []
 
-    possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
-    possibilities = Inputs.combine_array_map(stops, possibilities, :start)
-    possibilities = Inputs.combine_array_map(start, possibilities, :stop)
-    possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
-    possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
-    possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
-    possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shot)
+    if equity == "WDO"
+      stops = (2..5).to_a
+      start = (2..5).to_a
+      gain_1 = (1..5).to_a
+      gain_2 = (5..8).to_a
+      total_loss = [-100, -150, -200]
+      total_gain = [100, 150, 200]
+      breakeven = [true, false]
+      one_shot = [true, false]
+
+      possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
+      possibilities = Inputs.combine_array_map(stops, possibilities, :start)
+      possibilities = Inputs.combine_array_map(start, possibilities, :stop)
+      possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
+      possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
+      possibilities = Inputs.combine_array_map(breakeven, possibilities, :breakeven)
+      possibilities = Inputs.combine_array_map(one_shot, possibilities, :one_shot)
+
+      possibilities.delete_if do |poss|
+        total_gain = (poss[:gain_1] + poss[:gain_2]) * 10
+        total_loss = ((poss[:start] + poss[:stop])*2) * 10
+
+        (total_gain <  total_loss) || !(poss[:gain_1] <= poss[:gain_2])
+      end
+    end
 
     possibilities
   end

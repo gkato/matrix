@@ -4,7 +4,6 @@ require_relative "./containers/container_v1"
 $conf = YAML::load_file(File.join(__dir__, '../conf.yml'))
 opts={}
 
-require 'debug'
 if ARGV.first == "results"
   strat_equity = "opening_v1_WDO"
   if ARGV[1]

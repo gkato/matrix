@@ -12,7 +12,9 @@ class MatrixDB
     opts.merge!({wait_queue_timeout: 15}) if !opts.include?(:wait_queue_timeout)
 
     cluster = $conf["mongo"][env]["host"].split(",") rescue []
-    database = $conf["mongo"][env]["database"]
+    database = $conf["mongo"][env]["database"] || "matrix"
+
+    opts.merge!({database:database})
     @mongo = Mongo::Client.new(cluster, opts)
   end
 
