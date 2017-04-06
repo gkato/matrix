@@ -22,9 +22,8 @@ describe OpeningPullbackV1 do
      { date:DateTime.strptime("31/01/2017 09:13:03", "%d/%m/%Y %H:%M:%S"), value:3057, qty:1, ask:"E", bid:"F", :agressor=>:bid}]
   end
   let(:openning) { 3050 }
-  let(:formated_date) { "31/01/2017" }
-  let(:strategy) { OpeningPullbackV1.new(poss, tic_value, limit_time, historic, openning, formated_date) }
-  let(:strategy_mult) { OpeningPullbackV1.new(poss_mult, tic_value, limit_time, historic, openning, formated_date) }
+  let(:strategy) { OpeningPullbackV1.new(poss, tic_value, limit_time, historic, openning) }
+  let(:strategy_mult) { OpeningPullbackV1.new(poss_mult, tic_value, limit_time, historic, openning) }
 
   describe "#run_strategy" do
     context "given a historic when start is never reached" do

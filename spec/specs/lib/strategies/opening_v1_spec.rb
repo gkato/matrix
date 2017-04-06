@@ -11,8 +11,7 @@ describe OpeningV1 do
      { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"E", bid:"F", :agressor=>:bid}]
   end
   let(:openning) { 3052 }
-  let(:formated_date) { "31/01/2017" }
-  let(:strategy) { OpeningV1.new(poss, tic_value, limit_time, historic, openning, formated_date) }
+  let(:strategy) { OpeningV1.new(poss, tic_value, limit_time, historic, openning) }
 
   describe "#run_strategy" do
     before do

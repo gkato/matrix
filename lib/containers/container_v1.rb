@@ -56,7 +56,7 @@ class ContainerV1
         formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
 
         Parallel.each(poss_to_process, in_threads: 1) do |poss|
-          strategy = strategy_clazz.new(poss, ticval, time_limit, day[:tt], day[:openning], formated_date)
+          strategy = strategy_clazz.new(poss, ticval, time_limit, day[:tt], day[:openning])
           strategy.visual = visual
           result = strategy.run_strategy
 

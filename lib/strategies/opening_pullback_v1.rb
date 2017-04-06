@@ -7,8 +7,8 @@ class OpeningPullbackV1 < Strategy
 
   PULLBACK_STATUS = [:await, :pb_long, :pb_short].freeze
 
-  def initialize(possibility, tic_value, time, hist, openning, formated_date)
-    super(possibility, tic_value, time, hist, openning, formated_date)
+  def initialize(possibility, tic_value, time, hist, openning)
+    super(possibility, tic_value, time, hist, openning)
     @pullback = possibility[:pullback]
     @await_pullback = :await
 

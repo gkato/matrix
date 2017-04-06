@@ -3,9 +3,9 @@ class Strategy
   attr_accessor :stop, :gains, :start, :current, :openning, :position,
                 :position_size, :tic_val, :net, :limit_time, :historic, :poss,
                 :position_val, :allowed, :total_loss, :total_gain, :last,
-                :formated_date, :visual, :breakeven, :one_shot, :qty_trades
+                :visual, :breakeven, :one_shot, :qty_trades
 
-  def initialize(possibility, tic_value, time, hist, openning, formated_date)
+  def initialize(possibility, tic_value, time, hist, openning)
 
     @stop = possibility[:stop]
     @gains = possibility.select {|k,v| k.to_s =~ /^gain_\d+$/ }.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
@@ -24,7 +24,6 @@ class Strategy
     @qty_trades = 0
     @limit_time = time
     @historic = hist
-    @formated_date = formated_date
     @visual = false
     @allowed = true
   end
