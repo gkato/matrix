@@ -83,11 +83,11 @@ class Reporter
   def self.format_result(poss)
     rs = poss.select {|k, v| k.to_s != "per_day" }
     puts "Net: #{poss[:net]} - Poss #{rs}"
-    (poss[:per_day] || []).to_a.sort! do |a,b|
-      DateTime.strptime(a[:date],"%d/%m/%Y") <=> DateTime.strptime(b[:date],"%d/%m/%Y")
-    end
+
+    (poss[:per_day] || []).to_a.sort! { |a,b| a[:date] <=> b[:date] }
+
     (poss[:per_day] || []).to_a.each do |day|
-      puts " - Dia: #{day[:date]} - Net: #{day[:net]}"
+      puts " - Dia: #{day[:date].strftime("%d/%m/%Y")} - Net: #{day[:net]}"
     end
   end
 end

@@ -42,7 +42,8 @@ class ContainerV1
       result_db = MatrixDB.new
 
       formated_date = date_from_file(file, equity)
-      done_possibilities = (result_db.on(:results).find({strategy_name:strat_equity, date:formated_date}) || []).to_a
+      current_date = DateTime.strptime(formated_date, "%d/%m/%Y")
+      done_possibilities = (result_db.on(:results).find({strategy_name:strat_equity, date:current_date}) || []).to_a
 
       if done_possibilities.size != possibilities.size
         done_ids = done_possibilities.map {|i| i[:possId]}
@@ -53,14 +54,13 @@ class ContainerV1
         end
 
         day = data_loader.load(file)
-        formated_date = day[:tt].first[:date].strftime("%d/%m/%Y")
 
         Parallel.each(poss_to_process, in_threads: 1) do |poss|
           strategy = strategy_clazz.new(poss, ticval, time_limit, day[:tt], day[:openning])
           strategy.visual = visual
           result = strategy.run_strategy
 
-          result_db.on(:results).insert_one({ possId:poss[:possId], date:formated_date, net:result, strategy_name:poss[:name] })
+          result_db.on(:results).insert_one({ possId:poss[:possId], date:current_date, net:result, strategy_name:poss[:name] })
         end
       end
 

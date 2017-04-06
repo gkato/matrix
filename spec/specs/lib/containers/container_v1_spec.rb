@@ -160,7 +160,8 @@ describe ContainerV1 do
 
     context "given default parameters for possibilities" do
       it "runs the default strategy by day and print a report" do
-        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:"31/01/2017"}).and_return([])
+        trading_day = DateTime.strptime("31/01/2017" , "%d/%m/%Y")
+        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:trading_day}).and_return([])
 
         ContainerV1.new.start
 
@@ -174,13 +175,14 @@ describe ContainerV1 do
         #expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(matrix_db).to have_received(:insert_one)
         expect(matrix_db).to have_received(:close).twice
-        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:"31/01/2017"})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
       end
     end
 
     context "given default parameters for possibilities" do
       it "runs the default strategy, but do nothing because strategy was already ran for the given day. Will just print a report" do
-        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:"31/01/2017"}).and_return([{possId:0, net:10}])
+        trading_day = DateTime.strptime("31/01/2017" , "%d/%m/%Y")
+        allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:trading_day}).and_return([{possId:0, net:10}])
 
         ContainerV1.new.start
 
@@ -194,13 +196,13 @@ describe ContainerV1 do
         expect(OpeningV1).not_to receive(:new)
         expect(matrix_db).not_to receive(:insert_one)
         expect(matrix_db).to have_received(:close).twice
-        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:"31/01/2017"})
+        expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
       end
     end
 
     context "given default parameters for possibilities and specific array os trading days" do
       it "runs the default strategy, but do nothing because the given trading day doesnt exists" do
-        trading_day = "01/02/2017"
+        trading_day = DateTime.strptime("31/01/2017" , "%d/%m/%Y")
 
         allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:trading_day}).and_return([{possId:0, net:10}])
         ContainerV1.new.start({trading_days:[trading_day]})
@@ -216,18 +218,18 @@ describe ContainerV1 do
         expect(OpeningV1).not_to receive(:new)
         expect(matrix_db).not_to receive(:insert_one)
         expect(matrix_db).to have_received(:close).once
-        expect(matrix_db).not_to receive(:find).with({strategy_name:strat_equity, date:"31/01/2017"})
+        expect(matrix_db).not_to receive(:find).with({strategy_name:strat_equity, date:trading_day})
       end
     end
 
     context "given default parameters for possibilities and specific array os trading days" do
       it "runs the default strategy, but only for the allowed day" do
-        trading_day = "31/01/2017"
-        other_day = "01/02/2017"
+        trading_day = DateTime.strptime("31/01/2017" , "%d/%m/%Y")
+        other_day = DateTime.strptime("01/02/2017" , "%d/%m/%Y")
 
         allow(DataLoader).to receive(:fetch_trading_days).and_return([file_name, other_file_name])
         allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date:trading_day}).and_return([])
-        ContainerV1.new.start({trading_days:[trading_day]})
+        ContainerV1.new.start({trading_days:[trading_day.strftime("%d/%m/%Y")]})
 
         #expect(Reporter).to have_received(:by_possibility)
         expect(DataLoader).to have_received(:fetch_trading_days).with("WDO")
