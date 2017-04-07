@@ -6,6 +6,7 @@ require_relative "../data_loader"
 require_relative "../reporter"
 require_relative "../strategies/opening_v1"
 require_relative "../strategies/opening_pullback_v1"
+require_relative "../strategies/opening_pullback_v2"
 
 class ContainerV1
 

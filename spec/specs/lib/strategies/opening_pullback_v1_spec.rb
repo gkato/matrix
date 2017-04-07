@@ -126,7 +126,7 @@ describe OpeningPullbackV1 do
         strategy_mult.historic = historic
         strategy_mult.run_strategy
 
-        expect(strategy_mult.net).to be(100)
+        expect(strategy_mult.net).to be(120)
       end
     end
 
@@ -147,7 +147,7 @@ describe OpeningPullbackV1 do
         strategy_mult.historic = historic
         strategy_mult.run_strategy
 
-        expect(strategy_mult.net).to be(130)
+        expect(strategy_mult.net).to be(140)
       end
     end
     #### BASIC LONG STRATEGIES ####
@@ -265,13 +265,14 @@ describe OpeningPullbackV1 do
          { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"C", bid:"D", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3048, qty:1, ask:"C", bid:"D", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3047, qty:1, ask:"C", bid:"D", :agressor=>:bid},
+         { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3048, qty:1, ask:"C", bid:"D", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"E", bid:"F", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3051, qty:1, ask:"E", bid:"F", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3048.5, qty:1, ask:"E", bid:"F", :agressor=>:bid}]
         strategy_mult.historic = historic
         strategy_mult.run_strategy
 
-        expect(strategy_mult.net).to be(100)
+        expect(strategy_mult.net).to be(120)
       end
     end
 
@@ -285,6 +286,8 @@ describe OpeningPullbackV1 do
          { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3048, qty:1, ask:"C", bid:"D", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3047, qty:1, ask:"C", bid:"D", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3046, qty:1, ask:"E", bid:"F", :agressor=>:bid},
+         { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3047, qty:1, ask:"C", bid:"D", :agressor=>:bid},
+         { date:DateTime.strptime("31/01/2017 09:00:02", "%d/%m/%Y %H:%M:%S"), value:3048, qty:1, ask:"C", bid:"D", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"E", bid:"F", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3044, qty:1, ask:"E", bid:"F", :agressor=>:bid},
          { date:DateTime.strptime("31/01/2017 09:00:03", "%d/%m/%Y %H:%M:%S"), value:3051, qty:1, ask:"E", bid:"F", :agressor=>:bid},
@@ -292,7 +295,7 @@ describe OpeningPullbackV1 do
         strategy_mult.historic = historic
         strategy_mult.run_strategy
 
-        expect(strategy_mult.net).to be(130)
+        expect(strategy_mult.net).to be(140)
       end
     end
     #### BASIC SHORT STRATEGIES ####

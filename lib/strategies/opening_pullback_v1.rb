@@ -44,6 +44,33 @@ class OpeningPullbackV1 < Strategy
     close_position if @position_size == 0
   end
 
+  def take_profit_all(&block)
+    @gains.each do |key, value|
+      next if @done_gains.include?(key)
+      yield if block
+      do_take_profit(key)
+    end
+  end
+
+  def do_break_even
+    diff = @gains.size - @position_size
+    if diff > 0
+      if diff > 1
+        range = 0
+        @done_gains.each { |gain| range = @gains[gain] if (@gains[gain] < range || range == 0) }
+        if (@current.value <= (@position_val + range) && @position == :long) ||
+           (@current.value >= (@position_val - range) && @position == :short)
+          take_profit_all
+        end
+      else
+        if (@current.value <= (@position_val) && @position == :long) ||
+           (@current.value >= (@position_val) && @position == :short)
+          take_loss(false, @mults)
+        end
+      end
+    end
+  end
+
   def run_strategy
     @allowed = true
 
@@ -92,9 +119,7 @@ class OpeningPullbackV1 < Strategy
           next
         end
 
-        if @position_size != @gains.size && (@current.value <= @position_val)
-          take_loss(false, @mults)
-        end
+        do_break_even
       end
 
       if(@position == :short)
@@ -112,9 +137,7 @@ class OpeningPullbackV1 < Strategy
           next
         end
 
-        if @position_size != @gains.size && (@current.value >= @position_val)
-          take_loss(false, @mults)
-        end
+        do_break_even
       end
 
     end
