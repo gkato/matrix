@@ -44,11 +44,10 @@ class OpeningPullbackV1 < Strategy
     close_position if @position_size == 0
   end
 
-  def take_profit_all(&block)
-    @gains.each do |key, value|
+  def take_profit_all_if(&block)
+    @gains.each do |key, target|
       next if @done_gains.include?(key)
-      yield if block
-      do_take_profit(key)
+      do_take_profit(key) if yield(target)
     end
   end
 
@@ -60,7 +59,7 @@ class OpeningPullbackV1 < Strategy
         @done_gains.each { |gain| range = @gains[gain] if (@gains[gain] < range || range == 0) }
         if (@current.value <= (@position_val + range) && @position == :long) ||
            (@current.value >= (@position_val - range) && @position == :short)
-          take_profit_all
+          take_profit_all_if { true }
         end
       else
         if (@current.value <= (@position_val) && @position == :long) ||
@@ -104,53 +103,32 @@ class OpeningPullbackV1 < Strategy
         next
       end
 
-      if(@position == :long)
-        @gains.each do |key, value|
-          next if @done_gains.include?(key)
-          if @current.value >= (@position_val + value)
-            do_take_profit(key)
-          end
+
+      take_profit_all_if do |target|
+        if @position == :long
+          @current.value >= (@position_val + target)
+        elsif @position == :short
+          @current.value <= (@position_val - target)
         end
-
-        next if @position_size == 0
-
-        if @current.value <= (@openning - @stop)
-          take_loss(false, @mults)
-          next
-        end
-
-        do_break_even
       end
 
-      if(@position == :short)
-        @gains.each do |key, value|
-          next if @done_gains.include?(key)
-          if @current.value <= (@position_val - value)
-            do_take_profit(key)
-          end
-        end
+      next if @position_size == 0
 
-        next if @position_size == 0
 
-        if @current.value >= (@openning + @stop)
-          take_loss(false, @mults)
-          next
-        end
-
-        do_break_even
+      if (@current.value <= (@openning - @stop) && @position == :long) ||
+         (@current.value >= (@openning + @stop) && @position == :short)
+        take_loss(false, @mults)
+        next
       end
+
+      do_break_even
 
     end
 
     if(@position != :liquid)
       if((@current.value >= @position_val && @position == :long) ||
         (@current.value <= @position_val && @position == :short))
-
-        @gains.each do |key, value|
-          if !@done_gains.include?(key)
-            do_take_profit(key)
-          end
-        end
+        take_profit_all_if { true }
       else
         take_loss(false, @mults)
       end
