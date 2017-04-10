@@ -38,7 +38,6 @@ describe OpeningPullbackV1 do
     #### BASIC LONG STRATEGIES ####
     context "given a historic (default) with a simple gain (long) sequence" do
       it "runs the strategy and returns net profit" do
-        strategy.visual=true
         strategy.run_strategy
 
         expect(strategy.net).to be(100)

@@ -3,12 +3,14 @@ require 'trade_systems/trade_system_v1'
 describe TradeSystemV1 do
   let(:matrix_db) { double }
   let(:matrix_result) { double }
+  let(:matrix_result_other) { double }
   let(:strat_equity) { "opening_pullback_v1_WDO" }
   let(:trade_system_params) { { index:2, n_days:3, tsId:1} }
   let(:trade_system) { TradeSystemV1.new(strat_equity, trade_system_params) }
 
   before do
     allow(MatrixDB).to receive(:new).and_return(matrix_db)
+    allow(matrix_db).to receive(:on).with(:ts_results).and_return(matrix_db)
     allow(matrix_db).to receive(:on).with(:results) { matrix_db }
   end
 
@@ -128,10 +130,29 @@ describe TradeSystemV1 do
       end
     end
 
+    describe "#fetch_all_simulations" do
+      context "given a set o simulation data" do
+        it "returns all data" do
+          expected = [{tsId:1, net:-10, possId:2, date:DateTime.new}]
+          allow(matrix_db).to receive(:find).with({tsId:1}).and_return(expected)
+
+          result = trade_system.fetch_all_simulations
+          expect(result).to eq(expected)
+        end
+      end
+      context "given a set o simulation data" do
+        it "returns nil when no simultion exists" do
+          allow(matrix_db).to receive(:find).with({tsId:1}).and_return(nil)
+
+          result = trade_system.fetch_all_simulations
+          expect(result).to eq([])
+        end
+      end
+    end
+
     describe "#simulate" do
-      context "give a strat_equity, start date, index best and n_days" do
+      context "given a strat_equity, start date, index best and n_days" do
         it "returns a trade system simulation for a given strategy on an equity" do
-          allow(matrix_db).to receive(:on).with(:ts_results).and_return(matrix_db)
           allow(matrix_db).to receive(:close)
           start_date = DateTime.strptime("02/02/2018","%d/%m/%Y")
           current_date = start_date
@@ -148,6 +169,8 @@ describe TradeSystemV1 do
           allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
           allow(matrix_result).to receive(:first).and_return(last_result)
 
+          #last simulation allows
+          allow(matrix_db).to receive(:find).with({tsId:params[:tsId]}).and_return([])
 
           # starting results mocks and allows - day 02/02
           previous_date = start_date - params[:n_days]
@@ -182,6 +205,68 @@ describe TradeSystemV1 do
 
           # results mocks and allows for day 04/02
           current_date = current_date + 1
+          previous_date = current_date - params[:n_days]
+          poss_04 = [{strategy_name:"opening_pullback_v1_WDO", possId:1, net:-20, date:DateTime.strptime("2017-02-03","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-10, date:DateTime.strptime("2017-02-03","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:3, net:10, date:DateTime.strptime("2017-02-03","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:1, net:-10, date:DateTime.strptime("2017-02-04","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-40, date:DateTime.strptime("2017-02-04","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:3, net:-50, date:DateTime.strptime("2017-02-04","%Y-%m-%d")}]
+
+
+          query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
+          allow(matrix_db).to receive(:find).with(query).and_return(poss_04)
+          allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1})
+                                            .and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
+          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1})
+
+          # results mocks and allows for day 05/02
+          current_date = current_date + 1
+          previous_date = current_date - params[:n_days]
+          poss_05 = [{strategy_name:"opening_pullback_v1_WDO", possId:1, net:10, date:DateTime.strptime("2017-02-04","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-30, date:DateTime.strptime("2017-02-04","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:3, net:-50, date:DateTime.strptime("2017-02-04","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:1, net:-20, date:DateTime.strptime("2017-02-05","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-100, date:DateTime.strptime("2017-02-05","%Y-%m-%d")},
+                     {strategy_name:"opening_pullback_v1_WDO", possId:3, net:-30, date:DateTime.strptime("2017-02-05","%Y-%m-%d")}]
+
+
+
+          query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
+          allow(matrix_db).to receive(:find).with(query).and_return(poss_05)
+
+          result = ts.simulate
+          expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1})
+          expect(matrix_db).to have_received(:close)
+        end
+      end
+
+      context "given a strat_equity, start date, index best and n_days" do
+        it "returns a trade system simulation for a given strategy on an equity, but only do the full job on the last day, others was already processed" do
+          allow(matrix_db).to receive(:close)
+          start_date = DateTime.strptime("02/02/2018","%d/%m/%Y")
+          current_date = start_date + 2
+          last_date = DateTime.strptime("05/02/2018","%d/%m/%Y")
+
+          params = {index:1, n_days:1, start_date:start_date, tsId:1}
+          ts = TradeSystemV1.new(strat_equity, params)
+
+          last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
+
+          #last day allows
+          allow(matrix_db).to receive(:find).with({strat_equity:strat_equity}).and_return(matrix_result)
+          allow(matrix_result).to receive(:sort).with({date:-1}).and_return(matrix_result)
+          allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
+          allow(matrix_result).to receive(:first).and_return(last_result)
+
+          #last simulation allows
+          allow(matrix_db).to receive(:find).with({tsId:params[:tsId]}).and_return([
+            {tsId:params[:tsId], net:-10, possId:2, date:start_date+1},
+            {tsId:params[:tsId], net:-30, possId:2, date:start_date+2}
+          ])
+
+          # results mocks and allows for day 04/02
+          #current_date = current_date + 1
           previous_date = current_date - params[:n_days]
           poss_04 = [{strategy_name:"opening_pullback_v1_WDO", possId:1, net:-20, date:DateTime.strptime("2017-02-03","%Y-%m-%d")},
                      {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-10, date:DateTime.strptime("2017-02-03","%Y-%m-%d")},

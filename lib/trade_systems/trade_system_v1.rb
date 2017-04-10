@@ -67,12 +67,22 @@ class TradeSystemV1
     return result[:date] if result
   end
 
+  def fetch_all_simulations
+    (@matrix_db.on(:ts_results).find({tsId:@tsId}) || []).to_a
+  end
+
   def simulate
     current_date = @start_date
     last_date = get_last_date
     log "INICIO simulação, data início #{@start_date.strftime("%d/%m/%Y")}, data fim #{last_date.strftime("%d/%m/%Y")}"
 
     net = 0
+
+    (fetch_all_simulations || []).each do |simulation|
+      net += simulation[:net]
+      current_date = simulation[:date] if simulation[:date] > current_date
+    end
+
     while current_date < last_date
       poss = get_possibility_by_rule(start_date:current_date)
       result = next_result_for(poss[:possId], current_date+1)
