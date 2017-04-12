@@ -1,7 +1,7 @@
 require './lib/models/matrix_db'
 
 class TradeSystemV1
-  attr_accessor :strat_equity, :index, :n_days, :start_date, :matrix_db, :tsId, :visual
+  attr_accessor :strat_equity, :index, :n_days, :start_date, :matrix_db, :tsId, :visual, :name
 
   def initialize(strat_equity, opts)
     @strat_equity = strat_equity
@@ -10,6 +10,7 @@ class TradeSystemV1
     @start_date = opts[:start_date]
     @tsId = opts[:tsId]
     @matrix_db = MatrixDB.new
+    @name = opts[:name]
     @visual = opts[:visual] || false
   end
 
@@ -90,7 +91,7 @@ class TradeSystemV1
 
       log "  - Para o dia #{current_date.strftime("%d/%m/%Y")} - Melhor poss: #{poss[:possId]}, Resultado D+1: #{result[:net]} - Net periodo: #{net}"
 
-      matrix_db.on(:ts_results).insert_one({tsId:@tsId, net:result[:net], possId:poss[:possId], date:current_date+1})
+      matrix_db.on(:ts_results).insert_one({tsId:@tsId, net:result[:net], possId:poss[:possId], date:current_date+1, name:@name})
       current_date = current_date + 1
     end
     next_poss = get_possibility_by_rule(start_date:current_date)

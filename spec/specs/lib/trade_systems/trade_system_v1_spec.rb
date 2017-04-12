@@ -5,6 +5,7 @@ describe TradeSystemV1 do
   let(:matrix_result) { double }
   let(:matrix_result_other) { double }
   let(:strat_equity) { "opening_pullback_v1_WDO" }
+  let(:ts_name) { "ts_opening_pullback_v1_WDO" }
   let(:trade_system_params) { { index:2, n_days:3, tsId:1} }
   let(:trade_system) { TradeSystemV1.new(strat_equity, trade_system_params) }
 
@@ -185,7 +186,7 @@ describe TradeSystemV1 do
           allow(matrix_db).to receive(:find).with(query).and_return(poss_start)
           allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: start_date+1, possId:2})
                                             .and_return([{possId:2, net:-10, strategy_name:strat_equity, date:start_date+1}])
-          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:-10, possId:2, date:start_date+1})
+          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:-10, possId:2, date:start_date+1, name:params[:name]})
 
           # results mocks and allows for day 03/02
           current_date = current_date + 1
@@ -201,7 +202,7 @@ describe TradeSystemV1 do
           allow(matrix_db).to receive(:find).with(query).and_return(poss_03)
           allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:2})
                                             .and_return([{possId:2, net:-30, strategy_name:strat_equity, date:current_date+1}])
-          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:-30, possId:2, date:current_date+1})
+          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:-30, possId:2, date:current_date+1, name:params[:name]})
 
           # results mocks and allows for day 04/02
           current_date = current_date + 1
@@ -218,7 +219,7 @@ describe TradeSystemV1 do
           allow(matrix_db).to receive(:find).with(query).and_return(poss_04)
           allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1})
                                             .and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
-          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1})
+          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1, name:params[:name]})
 
           # results mocks and allows for day 05/02
           current_date = current_date + 1
@@ -280,7 +281,7 @@ describe TradeSystemV1 do
           allow(matrix_db).to receive(:find).with(query).and_return(poss_04)
           allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1})
                                             .and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
-          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1})
+          allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1, name:params[:name]})
 
           # results mocks and allows for day 05/02
           current_date = current_date + 1
