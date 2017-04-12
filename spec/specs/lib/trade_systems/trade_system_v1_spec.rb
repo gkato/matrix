@@ -6,7 +6,7 @@ describe TradeSystemV1 do
   let(:matrix_result_other) { double }
   let(:strat_equity) { "opening_pullback_v1_WDO" }
   let(:ts_name) { "ts_opening_pullback_v1_WDO" }
-  let(:trade_system_params) { { index:2, n_days:3, tsId:1} }
+  let(:trade_system_params) { { index:2, n_days:3, tsId:1, name:ts_name} }
   let(:trade_system) { TradeSystemV1.new(strat_equity, trade_system_params) }
 
   before do
@@ -159,7 +159,7 @@ describe TradeSystemV1 do
           current_date = start_date
           last_date = DateTime.strptime("05/02/2018","%d/%m/%Y")
 
-          params = {index:1, n_days:1, start_date:start_date, tsId:1}
+          params = {index:1, n_days:1, start_date:start_date, tsId:1, name:ts_name}
           ts = TradeSystemV1.new(strat_equity, params)
 
           last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
@@ -237,7 +237,7 @@ describe TradeSystemV1 do
           allow(matrix_db).to receive(:find).with(query).and_return(poss_05)
 
           result = ts.simulate
-          expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1})
+          expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1, name:ts_name})
           expect(matrix_db).to have_received(:close)
         end
       end
@@ -249,7 +249,7 @@ describe TradeSystemV1 do
           current_date = start_date + 2
           last_date = DateTime.strptime("05/02/2018","%d/%m/%Y")
 
-          params = {index:1, n_days:1, start_date:start_date, tsId:1}
+          params = {index:1, n_days:1, start_date:start_date, tsId:1, name:ts_name}
           ts = TradeSystemV1.new(strat_equity, params)
 
           last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
@@ -299,7 +299,7 @@ describe TradeSystemV1 do
           allow(matrix_db).to receive(:find).with(query).and_return(poss_05)
 
           result = ts.simulate
-          expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1})
+          expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1, name:ts_name})
           expect(matrix_db).to have_received(:close)
         end
       end

@@ -26,8 +26,27 @@ class TSContainerV1
     trade_systems
   end
 
-  def start
-    TradeSystemV1.new.clear_simulation_fields
+  def first_day_strat_equity(strat_equity)
+    result = @matrix_db.on("results").find({strat_equity:strat_equity}).sort({date:1}).limit(1).first()
+    return result[:date] if result
+  end
+
+  def start(ts_name)
+    ts_infos = tradesystem_infos(ts_name)
+    possibilities = create_trade_systems(ts_name)
+    start_date = first_day_strat_equity(ts_infos[:strat_equity])
+
+    results = []
+    possibilities.each do |poss|
+      date = start_date - poss[:n_days]
+      opts = {start_date:date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name}
+      trade_system = TradeSystemV1.new(ts_infos[:strat_equity], opts)
+      results << trade_system.simulate
+      trade_system.clear_simulation_fields
+    end
+    results.sort {|a,b| a[:net] <=> b[:net] }.each do |result|
+      puts result
+    end
     @matrix_db.close
   end
 end

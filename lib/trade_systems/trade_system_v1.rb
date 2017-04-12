@@ -99,7 +99,7 @@ class TradeSystemV1
     clear_simulation_fields
 
     log "FIM simulaçao - Net total:#{net} - poss recomendada: #{next_poss[:possId]}"
-    {tsId:@tsId, net:net, next_poss:next_poss[:possId]}
+    {tsId:@tsId, net:net, next_poss:next_poss[:possId], name:@name}
   end
 
   def clear_simulation_fields
