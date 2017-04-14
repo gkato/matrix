@@ -2,6 +2,7 @@ require 'trade_systems/trade_system_v1'
 
 describe TradeSystemV1 do
   let(:matrix_db) { double }
+  let(:matrix_results_db) { double }
   let(:matrix_result) { double }
   let(:matrix_result_other) { double }
   let(:strat_equity) { "opening_pullback_v1_WDO" }
@@ -12,7 +13,7 @@ describe TradeSystemV1 do
   before do
     allow(MatrixDB).to receive(:new).and_return(matrix_db)
     allow(matrix_db).to receive(:on).with(:ts_results).and_return(matrix_db)
-    allow(matrix_db).to receive(:on).with(:results) { matrix_db }
+    allow(matrix_db).to receive(:on).with(:results) { matrix_results_db }
   end
 
   describe "#get_possibility_by_rule" do
@@ -34,11 +35,11 @@ describe TradeSystemV1 do
                          {strategy_name:"opening_pullback_v1_WDO", possId:4, net:0, date:DateTime.strptime("2017-02-02","%Y-%m-%d")}]
 
         query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":start_date}}
-        allow(matrix_db).to receive(:find).with(query).and_return(poss_expected)
+        allow(matrix_results_db).to receive(:find).with(query).and_return(poss_expected)
 
         result = trade_system.get_possibility_by_rule(start_date:start_date)
 
-        expect(matrix_db).to have_received(:find).with(query)
+        expect(matrix_results_db).to have_received(:find).with(query)
         expect(result).to eq({possId:3, net:50, win_days:3, loss_days:0, total_win:50, total_loss:0, even_days:0})
       end
     end
@@ -67,11 +68,11 @@ describe TradeSystemV1 do
                          {strategy_name:"opening_pullback_v1_WDO", possId:4, net:20, date:DateTime.strptime("2017-02-03","%Y-%m-%d")}]
 
         query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":start_date}}
-        allow(matrix_db).to receive(:find).with(query).and_return(poss_expected)
+        allow(matrix_results_db).to receive(:find).with(query).and_return(poss_expected)
 
         result = trade_system.get_possibility_by_rule(start_date:start_date)
 
-        expect(matrix_db).to have_received(:find).with(query)
+        expect(matrix_results_db).to have_received(:find).with(query)
         expect(result).to eq({possId:3, net:40, win_days:2, loss_days:2, total_win:70, total_loss:-30, even_days:0})
       end
     end
@@ -82,14 +83,14 @@ describe TradeSystemV1 do
       it "return the result for next trading day" do
         possId = 1
         date = DateTime.strptime("02/02/2017","%d/%m/%Y")
-        query = {strategy_name:strat_equity, date:date, possId:possId}
+        query = {strategy_name:strat_equity, date: date, possId:possId}
         expected = {possId:possId, date:date, net:40, strategy_name:strat_equity}
 
-        allow(matrix_db).to receive(:find).with(query).and_return([expected])
+        allow(matrix_results_db).to receive(:find).with(query).and_return([expected])
 
         result = trade_system.next_result_for(possId, date)
 
-        expect(matrix_db).to have_received(:find).with(query)
+        expect(matrix_results_db).to have_received(:find).with(query)
         expect(result).to eq(expected)
       end
     end
@@ -99,17 +100,17 @@ describe TradeSystemV1 do
         it "return last date if exists" do
           possId = 1
           date = DateTime.strptime("02/02/2018","%d/%m/%Y")
-          query = {strat_equity:strat_equity}
+          query = {strategy_name:strat_equity}
           expected = {possId:possId, date:date, net:40, strategy_name:strat_equity}
           matrix_result = double
 
-          allow(matrix_db).to receive(:find).with(query).and_return(matrix_result)
+          allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
           allow(matrix_result).to receive(:sort).with({date:-1}).and_return(matrix_result)
           allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
           allow(matrix_result).to receive(:first).and_return(expected)
 
           result = trade_system.get_last_date
-          expect(matrix_db).to have_received(:find).with(query)
+          expect(matrix_results_db).to have_received(:find).with(query)
           expect(result).to eq(expected[:date])
         end
       end
@@ -117,15 +118,15 @@ describe TradeSystemV1 do
         it "return last date if exists" do
           possId = 1
           date = DateTime.strptime("02/02/2018","%d/%m/%Y")
-          query = {strat_equity:strat_equity}
+          query = {strategy_name:strat_equity}
 
-          allow(matrix_db).to receive(:find).with(query).and_return(matrix_result)
+          allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
           allow(matrix_result).to receive(:sort).with({date:-1}).and_return(matrix_result)
           allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
           allow(matrix_result).to receive(:first).and_return(nil)
 
           result = trade_system.get_last_date
-          expect(matrix_db).to have_received(:find).with(query)
+          expect(matrix_results_db).to have_received(:find).with(query)
           expect(result).to eq(nil)
         end
       end
@@ -165,7 +166,7 @@ describe TradeSystemV1 do
           last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
 
           #last day allows
-          allow(matrix_db).to receive(:find).with({strat_equity:strat_equity}).and_return(matrix_result)
+          allow(matrix_results_db).to receive(:find).with({strategy_name:strat_equity}).and_return(matrix_result)
           allow(matrix_result).to receive(:sort).with({date:-1}).and_return(matrix_result)
           allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
           allow(matrix_result).to receive(:first).and_return(last_result)
@@ -183,9 +184,9 @@ describe TradeSystemV1 do
                         {strategy_name:"opening_pullback_v1_WDO", possId:3, net:10, date:DateTime.strptime("2017-02-02","%Y-%m-%d")}]
 
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":start_date}}
-          allow(matrix_db).to receive(:find).with(query).and_return(poss_start)
-          allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: start_date+1, possId:2})
-                                            .and_return([{possId:2, net:-10, strategy_name:strat_equity, date:start_date+1}])
+          allow(matrix_results_db).to receive(:find).with(query).and_return(poss_start)
+          allow(matrix_results_db).to receive(:find).with({strategy_name:strat_equity, date: start_date+1, possId:2}).and_return([{possId:2, net:-10, strategy_name:strat_equity, date:start_date+1}])
+
           allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:-10, possId:2, date:start_date+1, name:params[:name]})
 
           # results mocks and allows for day 03/02
@@ -199,9 +200,9 @@ describe TradeSystemV1 do
                      {strategy_name:"opening_pullback_v1_WDO", possId:3, net:10, date:DateTime.strptime("2017-02-03","%Y-%m-%d")}]
 
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
-          allow(matrix_db).to receive(:find).with(query).and_return(poss_03)
-          allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:2})
-                                            .and_return([{possId:2, net:-30, strategy_name:strat_equity, date:current_date+1}])
+          allow(matrix_results_db).to receive(:find).with(query).and_return(poss_03)
+          allow(matrix_results_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:2}).and_return([{tsId:params[:tsId], net:-30, possId:2, date:current_date+1, name:params[:name]}])
+
           allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:-30, possId:2, date:current_date+1, name:params[:name]})
 
           # results mocks and allows for day 04/02
@@ -216,9 +217,10 @@ describe TradeSystemV1 do
 
 
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
-          allow(matrix_db).to receive(:find).with(query).and_return(poss_04)
-          allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1})
-                                            .and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
+
+          allow(matrix_results_db).to receive(:find).with(query).and_return(poss_04)
+          allow(matrix_results_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1}).and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
+
           allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1, name:params[:name]})
 
           # results mocks and allows for day 05/02
@@ -234,7 +236,7 @@ describe TradeSystemV1 do
 
 
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
-          allow(matrix_db).to receive(:find).with(query).and_return(poss_05)
+          allow(matrix_results_db).to receive(:find).with(query).and_return(poss_05)
 
           result = ts.simulate
           expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1, name:ts_name})
@@ -255,7 +257,7 @@ describe TradeSystemV1 do
           last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
 
           #last day allows
-          allow(matrix_db).to receive(:find).with({strat_equity:strat_equity}).and_return(matrix_result)
+          allow(matrix_results_db).to receive(:find).with({strategy_name:strat_equity}).and_return(matrix_result)
           allow(matrix_result).to receive(:sort).with({date:-1}).and_return(matrix_result)
           allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
           allow(matrix_result).to receive(:first).and_return(last_result)
@@ -278,9 +280,9 @@ describe TradeSystemV1 do
 
 
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
-          allow(matrix_db).to receive(:find).with(query).and_return(poss_04)
-          allow(matrix_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1})
-                                            .and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
+          allow(matrix_results_db).to receive(:find).with(query).and_return(poss_04)
+          allow(matrix_results_db).to receive(:find).with({strategy_name:strat_equity, date: current_date+1, possId:1}).and_return([{possId:1, net:10, strategy_name:strat_equity, date:current_date+1}])
+
           allow(matrix_db).to receive(:insert_one).with({tsId:params[:tsId], net:10, possId:1, date:current_date+1, name:params[:name]})
 
           # results mocks and allows for day 05/02
@@ -296,7 +298,7 @@ describe TradeSystemV1 do
 
 
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
-          allow(matrix_db).to receive(:find).with(query).and_return(poss_05)
+          allow(matrix_results_db).to receive(:find).with(query).and_return(poss_05)
 
           result = ts.simulate
           expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1, name:ts_name})

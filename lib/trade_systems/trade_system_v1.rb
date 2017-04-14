@@ -11,7 +11,7 @@ class TradeSystemV1
     @tsId = opts[:tsId]
     @matrix_db = MatrixDB.new
     @name = opts[:name]
-    @visual = opts[:visual] || false
+    @visual = opts[:visual] || true
   end
 
   def log(msg)
@@ -60,12 +60,16 @@ class TradeSystemV1
   end
 
   def next_result_for(possId, date)
-    (@matrix_db.on(:results).find({strategy_name:@strat_equity, date:date, possId:possId}).to_a || []).first
+    query = {strategy_name:@strat_equity, date: date , possId:possId}
+    (@matrix_db.on(:results).find(query) || []).to_a.first
   end
 
   def get_last_date
-    result = @matrix_db.on(:results).find({strat_equity:strat_equity}).sort({date:-1}).limit(1).first()
-    return result[:date] if result
+    result = @matrix_db.on(:results).find({strategy_name:strat_equity}).sort({date:-1}).limit(1).first()
+    if result
+      d = result[:date]
+      return DateTime.strptime("#{d.day}/#{d.month}/#{d.year}", "%d/%m/%Y")
+    end
   end
 
   def fetch_all_simulations
@@ -81,17 +85,27 @@ class TradeSystemV1
 
     (fetch_all_simulations || []).each do |simulation|
       net += simulation[:net]
-      current_date = simulation[:date] if simulation[:date] > current_date
+
+      d = simulation[:date]
+      date = DateTime.strptime("#{d.day}/#{d.month}/#{d.year}", "%d/%m/%Y")
+
+      current_date = date if date > current_date
     end
 
     while current_date < last_date
       poss = get_possibility_by_rule(start_date:current_date)
-      result = next_result_for(poss[:possId], current_date+1)
-      net += result[:net]
 
-      log "  - Para o dia #{current_date.strftime("%d/%m/%Y")} - Melhor poss: #{poss[:possId]}, Resultado D+1: #{result[:net]} - Net periodo: #{net}"
+      if poss
+        result = next_result_for(poss[:possId], current_date+1)
+        if result
+          net += result[:net]
 
-      matrix_db.on(:ts_results).insert_one({tsId:@tsId, net:result[:net], possId:poss[:possId], date:current_date+1, name:@name})
+          log "  - Para o dia #{current_date.strftime("%d/%m/%Y")} - Melhor poss: #{poss[:possId]}, Resultado D+1: #{result[:net]} - Net periodo: #{net}"
+
+          matrix_db.on(:ts_results).insert_one({tsId:@tsId, net:result[:net], possId:poss[:possId], date:current_date+1, name:@name})
+        end
+      end
+
       current_date = current_date + 1
     end
     next_poss = get_possibility_by_rule(start_date:current_date)

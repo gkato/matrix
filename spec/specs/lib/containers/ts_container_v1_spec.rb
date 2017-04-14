@@ -46,8 +46,9 @@ describe TSContainerV1 do
       it "fetchs the first processed date" do
           possId = 1
           strat_equity = "opening_pullback_v1_WDO"
-          date = DateTime.strptime("02/02/2018","%d/%m/%Y")
-          query = {strat_equity:strat_equity}
+          #date = DateTime.strptime("02/02/2018","%d/%m/%Y")
+          date = Time.new(2017, 02, 02, 0, 0, 0)
+          query = {strategy_name:strat_equity}
           expected = {possId:possId, date:date, net:40, strategy_name:strat_equity}
           matrix_result = double
 
@@ -58,7 +59,7 @@ describe TSContainerV1 do
 
           result = TSContainerV1.new.first_day_strat_equity(strat_equity)
           expect(matrix_results_db).to have_received(:find).with(query)
-          expect(result).to eq(expected[:date])
+          expect(result).to eq(DateTime.strptime("#{date.day}/#{date.month}/#{date.year}", "%d/%m/%Y"))
       end
     end
   end
@@ -125,7 +126,7 @@ describe TSContainerV1 do
 
         # First date
         start_date = DateTime.strptime("01/02/2017", "%d/%m/%Y")
-        query = {strat_equity:strat_equity}
+        query = {strategy_name:strat_equity}
         result_start_date = {possId:1, date:start_date, net:40, strategy_name:strat_equity}
         allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
         allow(matrix_result).to receive(:sort).with({date:1}).and_return(matrix_result)
@@ -133,8 +134,8 @@ describe TSContainerV1 do
         allow(matrix_result).to receive(:first).and_return(result_start_date)
 
         # Tradesystem opts and expected returns
-        opts_ts1 = {start_date:start_date - inputs[0][:n_days], index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name]}
-        opts_ts2 = {start_date:start_date - inputs[1][:n_days], index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name]}
+        opts_ts1 = {start_date:start_date + inputs[0][:n_days], index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name]}
+        opts_ts2 = {start_date:start_date + inputs[1][:n_days], index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name]}
         expected_ts1 = {tsId:opts_ts1[:tsId], net:30, next_poss:1, name:ts_name}
         expected_ts2 = {tsId:opts_ts2[:tsId], net:10, next_poss:2, name:ts_name}
 
