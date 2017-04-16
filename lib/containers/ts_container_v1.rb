@@ -41,8 +41,7 @@ class TSContainerV1
 
     results = []
     possibilities.each do |poss|
-      date = start_date + poss[:n_days]
-      opts = {start_date:date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name}
+      opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
       trade_system = TradeSystemV1.new(ts_infos[:strat_equity], opts)
       results << trade_system.simulate
       trade_system.clear_simulation_fields

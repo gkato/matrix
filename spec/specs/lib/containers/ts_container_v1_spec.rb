@@ -9,7 +9,7 @@ describe TSContainerV1 do
   let(:matrix_poss_db) { double }
   let(:matrix_result) { double }
   let(:ts_name) { "ts_opening_pullback_v1_WDO" }
-  let(:inputs) { [{index:1, n_days:1}, {index:2, n_days:2}] }
+  let(:inputs) { [{index:1, n_days:1, stop:1}, {index:2, n_days:2, stop:2}] }
 
   before do
     allow(matrix_db).to receive(:on).with("trade_systems").and_return(matrix_db)
@@ -134,8 +134,8 @@ describe TSContainerV1 do
         allow(matrix_result).to receive(:first).and_return(result_start_date)
 
         # Tradesystem opts and expected returns
-        opts_ts1 = {start_date:start_date + inputs[0][:n_days], index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name]}
-        opts_ts2 = {start_date:start_date + inputs[1][:n_days], index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name]}
+        opts_ts1 = {start_date:start_date, index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name], stop:inputs[0][:stop]}
+        opts_ts2 = {start_date:start_date, index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name], stop:inputs[1][:stop]}
         expected_ts1 = {tsId:opts_ts1[:tsId], net:30, next_poss:1, name:ts_name}
         expected_ts2 = {tsId:opts_ts2[:tsId], net:10, next_poss:2, name:ts_name}
 

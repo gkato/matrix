@@ -7,7 +7,7 @@ describe TradeSystemV1 do
   let(:matrix_result_other) { double }
   let(:strat_equity) { "opening_pullback_v1_WDO" }
   let(:ts_name) { "ts_opening_pullback_v1_WDO" }
-  let(:trade_system_params) { { index:2, n_days:3, tsId:1, name:ts_name} }
+  let(:trade_system_params) { { index:3, n_days:3, tsId:1, name:ts_name, stop:2, initial_index:2} }
   let(:trade_system) { TradeSystemV1.new(strat_equity, trade_system_params) }
 
   before do
@@ -21,6 +21,7 @@ describe TradeSystemV1 do
       it "returns the best result/possibility for index 3 and 3 days range, starting from 31/01/2017" do
         start_date = DateTime.strptime("02/02/2017","%d/%m/%Y")
         previous_date = start_date - trade_system_params[:n_days]
+        trade_system.start_date = start_date
         poss_expected = [{strategy_name:"opening_pullback_v1_WDO", possId:1, net:10, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
                          {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-10, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
                          {strategy_name:"opening_pullback_v1_WDO", possId:3, net:30, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
@@ -37,10 +38,36 @@ describe TradeSystemV1 do
         query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":start_date}}
         allow(matrix_results_db).to receive(:find).with(query).and_return(poss_expected)
 
-        result = trade_system.get_possibility_by_rule(start_date:start_date)
+        result = trade_system.get_possibility_by_rule(start_date:start_date, index:trade_system_params[:index])
 
         expect(matrix_results_db).to have_received(:find).with(query)
         expect(result).to eq({possId:3, net:50, win_days:3, loss_days:0, total_win:50, total_loss:0, even_days:0})
+      end
+    end
+    context "given the rule pick INDEX best possibility from N days" do
+      it "returns the best result/possibility for index 3 and 2 days range, starting from 31/01/2017, but use initial_index (1) due the date range" do
+        trade_system_params = { index:3, n_days:4, tsId:1, name:ts_name, stop:2, initial_index:1}
+        trade_system = TradeSystemV1.new(strat_equity, trade_system_params)
+        start_date = DateTime.strptime("01/02/2017","%d/%m/%Y")
+        previous_date = start_date - trade_system_params[:n_days]
+
+        trade_system.start_date = start_date
+        poss_expected = [{strategy_name:"opening_pullback_v1_WDO", possId:1, net:10, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-10, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:3, net:30, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:4, net:20, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:1, net:-10, date:DateTime.strptime("2017-02-01","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:2, net:50, date:DateTime.strptime("2017-02-01","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:3, net:10, date:DateTime.strptime("2017-02-01","%Y-%m-%d")},
+                         {strategy_name:"opening_pullback_v1_WDO", possId:4, net:10, date:DateTime.strptime("2017-02-01","%Y-%m-%d")}]
+
+        query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":start_date}}
+        allow(matrix_results_db).to receive(:find).with(query).and_return(poss_expected)
+
+        result = trade_system.get_possibility_by_rule(start_date:start_date, index:trade_system_params[:index])
+
+        expect(matrix_results_db).to have_received(:find).with(query)
+        expect(result).to eq({possId:2, net:40, win_days:1, loss_days:1, total_win:50, total_loss:-10, even_days:0})
       end
     end
     context "given the rule pick INDEX best possibility from N days" do
@@ -50,6 +77,7 @@ describe TradeSystemV1 do
 
         start_date = DateTime.strptime("02/02/2017","%d/%m/%Y")
         previous_date = start_date - trade_system_params[:n_days]
+        trade_system.start_date = start_date
         poss_expected = [{strategy_name:"opening_pullback_v1_WDO", possId:1, net:10, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
                          {strategy_name:"opening_pullback_v1_WDO", possId:2, net:-10, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
                          {strategy_name:"opening_pullback_v1_WDO", possId:3, net:60, date:DateTime.strptime("2017-01-31","%Y-%m-%d")},
@@ -70,7 +98,7 @@ describe TradeSystemV1 do
         query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":start_date}}
         allow(matrix_results_db).to receive(:find).with(query).and_return(poss_expected)
 
-        result = trade_system.get_possibility_by_rule(start_date:start_date)
+        result = trade_system.get_possibility_by_rule(start_date:start_date, index:trade_system_params[:index])
 
         expect(matrix_results_db).to have_received(:find).with(query)
         expect(result).to eq({possId:3, net:40, win_days:2, loss_days:2, total_win:70, total_loss:-30, even_days:0})
@@ -160,7 +188,7 @@ describe TradeSystemV1 do
           current_date = start_date
           last_date = DateTime.strptime("05/02/2018","%d/%m/%Y")
 
-          params = {index:1, n_days:1, start_date:start_date, tsId:1, name:ts_name}
+          params = {index:1, n_days:1, start_date:start_date, tsId:1, name:ts_name, stop:1}
           ts = TradeSystemV1.new(strat_equity, params)
 
           last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
@@ -238,6 +266,8 @@ describe TradeSystemV1 do
           query = {strategy_name:strat_equity, date: {"$gte":previous_date, "$lte":current_date}}
           allow(matrix_results_db).to receive(:find).with(query).and_return(poss_05)
 
+
+
           result = ts.simulate
           expect(result).to eq({tsId:params[:tsId], net:-30, next_poss:1, name:ts_name})
           expect(matrix_db).to have_received(:close)
@@ -251,7 +281,7 @@ describe TradeSystemV1 do
           current_date = start_date + 2
           last_date = DateTime.strptime("05/02/2018","%d/%m/%Y")
 
-          params = {index:1, n_days:1, start_date:start_date, tsId:1, name:ts_name}
+          params = {index:1, n_days:1, start_date:start_date, tsId:1, name:ts_name, stop:1}
           ts = TradeSystemV1.new(strat_equity, params)
 
           last_result = {possId:100, date:last_date, net:40, strategy_name:strat_equity}
