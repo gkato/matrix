@@ -51,4 +51,19 @@ class TSContainerV1
     end
     @matrix_db.close
   end
+
+  def show_ts_trace(tsId, ts_name)
+    poss = (@matrix_db.on("trade_systems").find({tsId:tsId, name:ts_name}) || []).to_a.first
+    return if poss.nil?
+
+    ts_infos = tradesystem_infos(ts_name)
+    start_date = first_day_strat_equity(ts_infos[:strat_equity])
+    opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
+    trace = TradeSystemV1.new(ts_infos[:strat_equity], opts).fetch_all_simulations
+
+    puts "Showing trace for simulatioin #{tsId} on #{ts_name}"
+    trace.each do |result|
+      puts result
+    end
+  end
 end

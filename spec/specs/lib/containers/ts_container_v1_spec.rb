@@ -9,6 +9,7 @@ describe TSContainerV1 do
   let(:matrix_poss_db) { double }
   let(:matrix_result) { double }
   let(:ts_name) { "ts_opening_pullback_v1_WDO" }
+  let(:strat_equity) { "opening_pullback_v1_WDO" }
   let(:inputs) { [{index:1, n_days:1, stop:1}, {index:2, n_days:2, stop:2}] }
 
   before do
@@ -111,6 +112,49 @@ describe TSContainerV1 do
         expect(ts[1][:name]).to eq(ts_name)
       end
     end
+  end
+
+  describe "#show_ts_trace" do
+    context "given a trade system id" do
+      it "prints the trade system trace" do
+        date = Time.new(2017, 02, 02, 0, 0, 0)
+        start_date = DateTime.strptime("#{date.day}/#{date.month}/#{date.year}", "%d/%m/%Y")
+        query = {strategy_name:strat_equity}
+        expected = {possId:1, date:date, net:40, strategy_name:strat_equity}
+        allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
+        allow(matrix_result).to receive(:sort).with({date:1}).and_return(matrix_result)
+        allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
+        allow(matrix_result).to receive(:first).and_return(expected)
+
+        poss = {tsId:1, index:1, n_days:1, stop:1, initial_index:1}
+        expected_simulation = [{tsId:1, net:-10, possId:2, date:DateTime.new}]
+        opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
+
+        allow(matrix_db).to receive(:find).with({tsId:poss[:tsId], name:ts_name}).and_return([poss])
+        allow(TradeSystemV1).to receive(:new).with(strat_equity, opts).and_return(trade_system)
+        allow(trade_system).to receive(:fetch_all_simulations).and_return(expected_simulation)
+
+        TSContainerV1.new.show_ts_trace(poss[:tsId], ts_name)
+
+        expect(matrix_db).to have_received(:find).with({tsId:poss[:tsId], name:ts_name})
+        expect(TradeSystemV1).to have_received(:new).with(strat_equity, opts)
+        expect(trade_system).to have_received(:fetch_all_simulations)
+      end
+    end
+    context "given a trade system id" do
+      it "does nothing because no trade system was fonund for the given id" do
+        poss = {tsId:1, index:1, n_days:1, stop:1, initial_index:1}
+
+        allow(matrix_db).to receive(:find).with({tsId:poss[:tsId], name:ts_name}).and_return([])
+
+        TSContainerV1.new.show_ts_trace(poss[:tsId], ts_name)
+
+        expect(matrix_db).to have_received(:find).with({tsId:poss[:tsId], name:ts_name})
+        expect(TradeSystemV1).not_to receive(:new)
+        expect(trade_system).not_to receive(:fetch_all_simulations)
+      end
+    end
+
   end
 
   describe "#start" do

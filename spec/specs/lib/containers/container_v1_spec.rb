@@ -97,7 +97,25 @@ describe ContainerV1 do
         expect(matrix_db).to have_received(:close)
       end
     end
+
+    context "given a possibilities, all results processed and a date range" do
+      it "retrieves the result for the given date rage" do
+        start_date = DateTime.strptime("01/02/2017", "%d/%m/%Y")
+        end_date = DateTime.strptime("02/02/2017", "%d/%m/%Y")
+        query = {strategy_name:strat_equity, date:{"$gte":start_date, "$lte":end_date}, possId:0}
+        allow(matrix_db).to receive(:find).with(query).and_return([{possId:0, net:10, date:start_date},{possId:0, net:20, date:end_date}])
+
+        ContainerV1.new.run_results(strat_equity, start_date:start_date, end_date:end_date)
+
+        expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
+        expect(matrix_db).not_to receive(:find).with(query)
+        expect(Reporter).to have_received(:by_possibility)
+      end
+    end
   end
+
+  #describe "#fetch_done_possibilities_by" do
+  #end
 
   describe "#create_posssibilities" do
     context "a matrix_db object with connection to the database" do
@@ -130,7 +148,10 @@ describe ContainerV1 do
     context "given a possibilities and all results is processed" do
       it "prepares and report results" do
         possibilities.first[:possId] = 0
-        ContainerV1.new.prepare_results(possibilities, matrix_db, strat_equity)
+
+        ContainerV1.new.prepare_results(possibilities, matrix_db, strat_equity) do |poss|
+          (matrix_db.on(:results).find({strategy_name:strat_equity, possId:0}) || []).to_a
+        end
 
         expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(Reporter).to have_received(:by_possibility)

@@ -71,8 +71,6 @@ class ContainerV1
     diff = Time.now- start
     puts "Tooks #{diff}ms"
 
-    #prepare_results(possibilities, matrix_db, strat_equity)
-
     matrix_db.close
   end
 
@@ -99,9 +97,14 @@ class ContainerV1
 
     possibilities = create_posssibilities(matrix_db, strat_equity)
     possibilities = possibilities.find_all {|poss| poss[:possId] == opts[:possId]  } if opts[:possId]
-    #possibilities = [{possId:"current", :breakeven=>true,:total_loss=>-100, :total_gain=>250, :stop=>4, :start=>3, :gain_1=>4, :gain_2=>5, one_shot:true}]
-    prepare_results(possibilities, matrix_db, strat_equity)
 
+    prepare_results(possibilities, matrix_db, strat_equity) do |poss|
+      query = {strategy_name:strat_equity, possId:poss[:possId]}
+      start_date = opts[:start_date]
+      end_date = opts[:end_date]
+      query.merge!({date:{"$gte":start_date, "$lte":end_date}}) if (start_date && end_date)
+      (matrix_db.on(:results).find(query) || []).to_a
+    end
     matrix_db.close
   end
 
@@ -121,12 +124,12 @@ class ContainerV1
     possibilities
   end
 
-  def prepare_results(possibilities, matrix_db, strat_equity)
+  def prepare_results(possibilities, matrix_db, strat_equity, &block)
     puts "Preparing results.."
 
     possibilities = (possibilities || []).to_a
     possibilities.each do |poss|
-      poss[:per_day] = (matrix_db.on(:results).find({strategy_name:strat_equity, possId:poss[:possId]}) || []).to_a
+      poss[:per_day] = yield(poss)
       poss[:net] = 0
       poss[:per_day].each do |per_day|
         poss[:net] += per_day[:net]
