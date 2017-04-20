@@ -95,6 +95,7 @@ class ContainerV1
   def run_results(strat_equity, opts={})
     matrix_db = MatrixDB.new
 
+    results_index = opts[:index] || 4
     possibilities = create_posssibilities(matrix_db, strat_equity)
     possibilities = possibilities.find_all {|poss| poss[:possId] == opts[:possId]  } if opts[:possId]
 
@@ -105,6 +106,7 @@ class ContainerV1
       query.merge!({date:{"$gte":start_date, "$lte":end_date}}) if (start_date && end_date)
       (matrix_db.on(:results).find(query) || []).to_a
     end
+    Reporter.by_possibility(possibilities, results_index)
     matrix_db.close
   end
 
@@ -135,6 +137,5 @@ class ContainerV1
         poss[:net] += per_day[:net]
       end
     end
-    Reporter.by_possibility(possibilities)
   end
 end

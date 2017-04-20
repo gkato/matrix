@@ -24,6 +24,7 @@ elsif ARGV.first == "results"
   strat_equity = "opening_v1_WDO"
   if ARGV[1]
     opts[:possId] = (ARGV[1].scan(/possId:(\d+)/).flatten.first.to_i rescue nil) if ARGV[1] =~ /possId/
+    opts[:index] = (ARGV[1].scan(/index:(\d+)/).flatten.first.to_i rescue nil) if ARGV[1] =~ /index/
     strat_equity = ((ARGV[1].scan(/strat_equity:(.*[A-Z]+)/).flatten.first rescue nil) || strat_equity)
     if ARGV[1] =~ /start_date/
       start_date = (ARGV[1].scan(/start_date:([0-9]{2}\/[0-9]{2}\/[0-9]{4})/).flatten.first rescue nil)

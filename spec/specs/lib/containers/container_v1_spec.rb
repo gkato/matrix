@@ -154,7 +154,6 @@ describe ContainerV1 do
         end
 
         expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
-        expect(Reporter).to have_received(:by_possibility)
         expect(possibilities.first[:net]).to eq(10)
       end
     end

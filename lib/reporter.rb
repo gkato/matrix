@@ -64,25 +64,25 @@ class Reporter
   #  #end
   #end
 
-  def self.by_possibility(possibilities)
+  def self.by_possibility(possibilities,index=4)
     puts
     possibilities.sort! { |a,b| a[:net] <=> b[:net] }
 
-    puts "- 4 worst results"
-    possibilities.first(4).each do |poss|
-      format_result poss
+    puts "- #{index} worst results"
+    possibilities.first(index).each_with_index do |poss,i|
+      format_result(poss,index-i)
     end
 
-    puts "- 4 best results"
-    possibilities.last(4).each do |poss|
-      format_result poss
+    puts "- #{index} best results"
+    possibilities.last(index).each_with_index do |poss,i|
+      format_result(poss,index-i)
     end
   end
 
   private
-  def self.format_result(poss)
+  def self.format_result(poss, index)
     rs = poss.select {|k, v| k.to_s != "per_day" }
-    puts "Net: #{poss[:net]} - Poss #{rs}"
+    puts "[#{index}]Net: #{poss[:net]} - Poss #{rs}"
 
     (poss[:per_day] || []).to_a.sort! { |a,b| a[:date] <=> b[:date] }
 
