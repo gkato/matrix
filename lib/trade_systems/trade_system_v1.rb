@@ -91,7 +91,7 @@ class TradeSystemV1
   def simulate
     current_date = @start_date
     last_date = get_last_date
-    log "INICIO simulação, data início #{@start_date.strftime("%d/%m/%Y")}, data fim #{last_date.strftime("%d/%m/%Y")} - index: #{@index}, n_days: #{@n_days}, stop: #{@stop}"
+    log "INICIO simulação, data início #{@start_date.strftime("%d/%m/%Y")}, data fim #{last_date.strftime("%d/%m/%Y")} - index: #{@index}, n_days: #{@n_days}, stop: #{@stop}, initial_index: #{@initial_index}"
 
     net = 0
     result = nil

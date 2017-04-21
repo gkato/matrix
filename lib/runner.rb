@@ -6,20 +6,22 @@ $conf = YAML::load_file(File.join(__dir__, '../conf.yml'))
 opts={}
 
 if ARGV.first == "ts"
-  if ARGV[1].start_with?("ts_")
-    trade_systems = ["ts_opening_v1_WDO", "ts_opening_v1_WIN", "ts_opening_pullback_v1_WDO", "ts_opening_pullback_v1_WIN",
-                    "ts_opening_pullback_v2_WDO", "ts_opening_pullback_v2_WIN"]
-    if trade_systems.include?(ARGV[1])
-      TSContainerV1.new.start(ARGV[1])
-    else
-      puts "Container inválido"
-    end
-  else
-    tsId = ARGV[1].scan(/tsId:(\d+)/).flatten.first.to_i rescue nil
-    ts_name = ARGV[1].scan(/ts_name:(ts_\S+WDO|WIN)/).flatten.first rescue nil
-    TSContainerV1.new.show_ts_trace(tsId, ts_name)
-  end
+  if ARGV[1] && ARGV[2]
+    tsId = ARGV[2].scan(/tsId:(\d+)/).flatten.first.to_i rescue nil if ARGV[2] =~ /tsId/
+    ts_name = ARGV[2].scan(/ts_name:(ts_\S+WDO|WIN)/).flatten.first rescue nil if ARGV[2] =~ /ts_name/
+    trade_systems = ["ts_opening_v1_WDO", "ts_opening_v1_WIN", "ts_opening_pullback_v1_WDO", "ts_opening_pullback_v1_WIN", "ts_opening_pullback_v2_WDO", "ts_opening_pullback_v2_WIN"]
 
+    if ARGV[1].start_with?("run")
+      opts[:tsId] = tsId if tsId
+      if trade_systems.include?(ts_name)
+        TSContainerV1.new.start(ts_name, opts)
+      else
+        puts "Container inválido"
+      end
+    elsif ARGV[1].start_with?("trace")
+      TSContainerV1.new.show_ts_trace(tsId, ts_name)
+    end
+  end
 elsif ARGV.first == "results"
   strat_equity = "opening_v1_WDO"
   if ARGV[1]

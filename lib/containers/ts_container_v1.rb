@@ -34,14 +34,23 @@ class TSContainerV1
     end
   end
 
-  def start(ts_name)
+  def build_ts_opts(ts_name, start_date, poss)
+    opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
+    opts.merge!({initial_index:poss[:initial_index]}) if poss[:initial_index]
+    opts
+  end
+
+  def start(ts_name,opts={})
     ts_infos = tradesystem_infos(ts_name)
+
     possibilities = create_trade_systems(ts_name)
+    possibilities.delete_if { |poss| poss[:tsId] != opts[:tsId] } if opts[:tsId]
+
     start_date = first_day_strat_equity(ts_infos[:strat_equity])
 
     results = []
     possibilities.each do |poss|
-      opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
+      opts = build_ts_opts(ts_name, start_date, poss)
       trade_system = TradeSystemV1.new(ts_infos[:strat_equity], opts)
       results << trade_system.simulate
       trade_system.clear_simulation_fields
@@ -58,7 +67,7 @@ class TSContainerV1
 
     ts_infos = tradesystem_infos(ts_name)
     start_date = first_day_strat_equity(ts_infos[:strat_equity])
-    opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
+    opts = build_ts_opts(ts_name, start_date, poss)
     trace = TradeSystemV1.new(ts_infos[:strat_equity], opts).fetch_all_simulations
 
     puts "Showing trace for simulatioin #{tsId} on #{ts_name}"

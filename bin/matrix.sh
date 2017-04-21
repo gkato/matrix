@@ -7,6 +7,6 @@ if [ "$1" = "strat" ]; then
   fi
 fi
 if [ "$1" = "ts" ]; then
-  ruby ./lib/runner.rb $1 $2
+  ruby ./lib/runner.rb $1 $2 $3
 fi
 
