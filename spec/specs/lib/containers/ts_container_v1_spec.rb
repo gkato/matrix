@@ -67,6 +67,18 @@ describe TSContainerV1 do
     end
   end
 
+  describe "#first_simulation_day_from" do
+    context "given a first day of a strat equity" do
+      it "returns the first day of the next month from the given date" do
+        start_date = DateTime.strptime("01/02/2017", "%d/%m/%Y")
+        first_day_next_month = DateTime.strptime("01/03/2017", "%d/%m/%Y")
+
+        result = TSContainerV1.new.first_simulation_day_from(start_date)
+        expect(result).to eq(first_day_next_month)
+      end
+    end
+  end
+
   describe "#create_trade_systems" do
     before { allow(TradeSystemV1).to receive(:new).and_return(trade_system) }
     context "given a set of possibilities" do
@@ -173,7 +185,7 @@ describe TSContainerV1 do
         strat_equity = ts_name.gsub("ts_","")
 
         # First date
-        start_date = DateTime.strptime("01/02/2017", "%d/%m/%Y")
+        start_date = DateTime.strptime("01/01/2017", "%d/%m/%Y")
         query = {strategy_name:strat_equity}
         result_start_date = {possId:1, date:start_date, net:40, strategy_name:strat_equity}
         allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
@@ -181,9 +193,11 @@ describe TSContainerV1 do
         allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
         allow(matrix_result).to receive(:first).and_return(result_start_date)
 
+        first_simulation_day = TSContainerV1.new.first_simulation_day_from(start_date)
+
         # Tradesystem opts and expected returns
-        opts_ts1 = {start_date:start_date, index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name], stop:inputs[0][:stop]}
-        opts_ts2 = {start_date:start_date, index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name], stop:inputs[1][:stop]}
+        opts_ts1 = {start_date:first_simulation_day, index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name], stop:inputs[0][:stop]}
+        opts_ts2 = {start_date:first_simulation_day, index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name], stop:inputs[1][:stop]}
         expected_ts1 = {tsId:opts_ts1[:tsId], net:30, next_poss:1, name:ts_name}
         expected_ts2 = {tsId:opts_ts2[:tsId], net:10, next_poss:2, name:ts_name}
 
@@ -208,7 +222,7 @@ describe TSContainerV1 do
         strat_equity = ts_name.gsub("ts_","")
 
         # First date
-        start_date = DateTime.strptime("01/02/2017", "%d/%m/%Y")
+        start_date = DateTime.strptime("01/01/2017", "%d/%m/%Y")
         query = {strategy_name:strat_equity}
         result_start_date = {possId:1, date:start_date, net:40, strategy_name:strat_equity}
         allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
@@ -216,9 +230,11 @@ describe TSContainerV1 do
         allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
         allow(matrix_result).to receive(:first).and_return(result_start_date)
 
+        first_simulation_day = TSContainerV1.new.first_simulation_day_from(start_date)
+
         # Tradesystem opts and expected returns
-        opts_ts1 = {start_date:start_date, index:inputs_initial[0][:index], n_days:inputs_initial[0][:n_days], tsId:inputs_initial[0][:tsId], name:inputs_initial[0][:name], stop:inputs_initial[0][:stop], initial_index:inputs_initial[0][:initial_index]}
-        opts_ts2 = {start_date:start_date, index:inputs_initial[1][:index], n_days:inputs_initial[1][:n_days], tsId:inputs_initial[1][:tsId], name:inputs_initial[1][:name], stop:inputs_initial[1][:stop], initial_index:inputs_initial[1][:initial_index]}
+        opts_ts1 = {start_date:first_simulation_day, index:inputs_initial[0][:index], n_days:inputs_initial[0][:n_days], tsId:inputs_initial[0][:tsId], name:inputs_initial[0][:name], stop:inputs_initial[0][:stop], initial_index:inputs_initial[0][:initial_index]}
+        opts_ts2 = {start_date:first_simulation_day, index:inputs_initial[1][:index], n_days:inputs_initial[1][:n_days], tsId:inputs_initial[1][:tsId], name:inputs_initial[1][:name], stop:inputs_initial[1][:stop], initial_index:inputs_initial[1][:initial_index]}
         expected_ts1 = {tsId:opts_ts1[:tsId], net:30, next_poss:1, name:ts_name}
         expected_ts2 = {tsId:opts_ts2[:tsId], net:10, next_poss:2, name:ts_name}
 
@@ -248,7 +264,7 @@ describe TSContainerV1 do
         strat_equity = ts_name.gsub("ts_","")
 
         # First date
-        start_date = DateTime.strptime("01/02/2017", "%d/%m/%Y")
+        start_date = DateTime.strptime("01/01/2017", "%d/%m/%Y")
         query = {strategy_name:strat_equity}
         result_start_date = {possId:1, date:start_date, net:40, strategy_name:strat_equity}
         allow(matrix_results_db).to receive(:find).with(query).and_return(matrix_result)
@@ -256,9 +272,11 @@ describe TSContainerV1 do
         allow(matrix_result).to receive(:limit).with(1).and_return(matrix_result)
         allow(matrix_result).to receive(:first).and_return(result_start_date)
 
+        first_simulation_day = TSContainerV1.new.first_simulation_day_from(start_date)
+
         # Tradesystem opts and expected returns
-        opts_ts1 = {start_date:start_date, index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name], stop:inputs[0][:stop]}
-        opts_ts2 = {start_date:start_date, index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name], stop:inputs[1][:stop]}
+        opts_ts1 = {start_date:first_simulation_day, index:inputs[0][:index], n_days:inputs[0][:n_days], tsId:inputs[0][:tsId], name:inputs[0][:name], stop:inputs[0][:stop]}
+        opts_ts2 = {start_date:first_simulation_day, index:inputs[1][:index], n_days:inputs[1][:n_days], tsId:inputs[1][:tsId], name:inputs[1][:name], stop:inputs[1][:stop]}
         expected_ts1 = {tsId:opts_ts1[:tsId], net:30, next_poss:1, name:ts_name}
         expected_ts2 = {tsId:opts_ts2[:tsId], net:10, next_poss:2, name:ts_name}
 

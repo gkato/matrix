@@ -157,14 +157,16 @@ class TradeSystemV1
     index = (1..10).to_a
     n_days = (3..30).to_a
     stop = (1..4).to_a
-    initial_index = (1..5).to_a
+    #initial_index = (1..5).to_a
+    #initial_index << nil
 
     possibilities = Inputs.combine_arrays(index, n_days, :index, :n_days)
     possibilities = Inputs.combine_array_map(stop,     possibilities, :stop)
-    possibilities = Inputs.combine_array_map(stop,     possibilities, :stop)
-    possibilities = Inputs.combine_array_map(initial_index, possibilities, :initial_index)
+    #possibilities = Inputs.combine_array_map(initial_index, possibilities, :initial_index)
     possibilities.delete_if do |poss|
-      poss[:initial_index] >= poss[:index]
+      if poss[:initial_index]
+        poss[:initial_index] >= poss[:index]
+      end
     end
     possibilities
   end

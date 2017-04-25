@@ -34,10 +34,23 @@ class TSContainerV1
     end
   end
 
+  def first_simulation_day_from(start_date)
+    month = start_date.month
+    first_day_next_month = start_date.next_day
+    while month == first_day_next_month.month
+      first_day_next_month = first_day_next_month.next_day
+    end
+    first_day_next_month
+  end
+
   def build_ts_opts(ts_name, start_date, poss)
     opts = {start_date:start_date, index:poss[:index], n_days:poss[:n_days], tsId:poss[:tsId], name:ts_name, stop:poss[:stop]}
     opts.merge!({initial_index:poss[:initial_index]}) if poss[:initial_index]
     opts
+  end
+
+  def get_start_date(strat_equity)
+    first_simulation_day_from(first_day_strat_equity(strat_equity))
   end
 
   def start(ts_name,opts={})
@@ -46,7 +59,7 @@ class TSContainerV1
     possibilities = create_trade_systems(ts_name)
     possibilities.delete_if { |poss| poss[:tsId] != opts[:tsId] } if opts[:tsId]
 
-    start_date = first_day_strat_equity(ts_infos[:strat_equity])
+    start_date = get_start_date(ts_infos[:strat_equity])
 
     results = []
     possibilities.each do |poss|
@@ -71,8 +84,11 @@ class TSContainerV1
     trace = TradeSystemV1.new(ts_infos[:strat_equity], opts).fetch_all_simulations
 
     puts "Showing trace for simulatioin #{tsId} on #{ts_name}"
+    net = 0
     trace.each do |result|
       puts result
+      net += result[:net]
     end
+    puts "Net do periodo: #{net}"
   end
 end
