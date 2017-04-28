@@ -263,4 +263,126 @@ describe Strategy do
     end
   end
 
+  describe "#get_gain_index" do
+    context "given a gain symbol" do
+      it "return the index" do
+        result = strategy.get_gain_index(:gain_1)
+        expect(result).to eq("1")
+      end
+    end
+  end
+
+  describe "#get_gain_factor" do
+    context "given a gain symbol" do
+      it "return the gain factor (mult)" do
+        strategy.mults = {mult_1:5}
+        result = strategy.get_gain_factor(:gain_1)
+        expect(result).to eq(5)
+      end
+    end
+  end
+
+  describe "#do_take_profit" do
+    before do
+      strategy.net = 0
+      strategy.mults = {mult_1:5}
+      tt = historic.first
+      strategy.current = TT.new(tt[:date], tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      strategy.position_size = 1
+    end
+    context "given a gain symbol" do
+      it "takes profit, removes from mults and add to gains" do
+        strategy.position_val = historic.first[:value] - 1
+        strategy.do_take_profit(:gain_1)
+
+        expect(strategy.net).to be(50)
+        expect(strategy.done_gains.first).to be(:gain_1)
+        expect(strategy.mults.size).to be(0)
+        expect(strategy.position_size).to be(0)
+      end
+    end
+  end
+
+  describe "#take_profit_all_if" do
+    before do
+      strategy.net = 0
+      strategy.mults = {mult_2:2}
+      strategy.done_gains = [:gain_1]
+      tt = historic.first
+      strategy.current = TT.new(tt[:date], tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      strategy.position_size = 1
+    end
+    context "given a set of gains" do
+      it "takes profit only the remaining position" do
+        strategy.position_val = historic.first[:value] - 1
+        strategy.take_profit_all_if { |key, target| true }
+        expect(strategy.net).to be(20)
+      end
+    end
+  end
+
+  describe "#take_profit_all_if" do
+    before do
+      strategy.net = 0
+      strategy.mults = {mult_2:2}
+      strategy.done_gains = [:gain_1]
+      tt = historic.first
+      strategy.current = TT.new(tt[:date], tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      strategy.position_size = 1
+    end
+    context "given a set of gains" do
+      it "takes profit only the remaining position" do
+        strategy.position_val = historic.first[:value] - 1
+        strategy.take_profit_all_if { |key, target| true }
+        expect(strategy.net).to be(20)
+      end
+    end
+  end
+
+  describe "#do_break_even" do
+    let(:new_poss) {{stop:1, gain_1:1, gain_2:2, gain_3:3, start:1, total_gain:100, total_loss:-100, net:0, per_day:[]}}
+    let(:new_strategy) { Strategy.new(new_poss, tic_value, limit_time, historic, openning) }
+
+    before do
+      tt = historic.first
+      new_strategy.done_gains = [:gain_1]
+      new_strategy.position = :long
+      new_strategy.net = 10
+      new_strategy.position_val = 3050
+      new_strategy.current = TT.new(tt[:date], tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      new_strategy.position_size = 2
+    end
+
+    context "given ONE partial gain already done" do
+      it "do brak even if price reach the last step, on long" do
+        new_strategy.do_break_even
+        expect(new_strategy.net).to eq(10)
+        expect(new_strategy.position_size).to eq(0)
+      end
+      it "do brak even if price reach the last step, on short" do
+        new_strategy.position = :short
+        new_strategy.do_break_even
+        expect(new_strategy.net).to eq(10)
+        expect(new_strategy.position_size).to eq(0)
+      end
+    end
+
+    context "given TWO partial gain already done" do
+      before do
+        new_strategy.net = 20
+        new_strategy.done_gains = [:gain_1, :gain_2]
+      end
+      it "do brak even if price reach the last step, on long" do
+        new_strategy.do_break_even
+        expect(new_strategy.net).to eq(20)
+        expect(new_strategy.position_size).to eq(0)
+      end
+      it "do brak even if price reach the last step, on short" do
+        new_strategy.position = :short
+        new_strategy.do_break_even
+        expect(new_strategy.net).to eq(20)
+        expect(new_strategy.position_size).to eq(0)
+      end
+    end
+  end
 end

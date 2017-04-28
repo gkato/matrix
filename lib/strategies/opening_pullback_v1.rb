@@ -3,7 +3,7 @@ require './lib/inputs'
 
 class OpeningPullbackV1 < Strategy
 
-  attr_accessor :pullback, :await_pullback, :mults, :done_gains
+  attr_accessor :pullback, :await_pullback
 
   PULLBACK_STATUS = [:await, :pb_long, :pb_short].freeze
 
@@ -12,9 +12,6 @@ class OpeningPullbackV1 < Strategy
     @pullback = possibility[:pullback]
     @await_pullback = :await
 
-    @mults = possibility.select {|k,v| k.to_s =~ /^mult_\d+$/ }.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
-    @gains.each { |k,v| @mults[k.to_s.gsub("gain","mult").to_sym] = get_gain_factor(k) }
-    @done_gains = []
     @one_shot = true
   end
 
@@ -23,51 +20,6 @@ class OpeningPullbackV1 < Strategy
 
   def flip_allowed?
     (@current.value >= @openning && @last.value < @openning) || (@current.value <= @openning && @last.value > @openning)
-  end
-
-  def get_gain_index(gain_sym)
-    gain_sym.to_s.scan(/^gain_(\d+)/).flatten.first
-  end
-
-  def get_gain_factor(gain_sym)
-    index = get_gain_index(gain_sym)
-    multi_sym = "mult_#{index}".to_sym
-    @mults[multi_sym] || 1
-  end
-
-  def do_take_profit(gain_sym)
-    factor = get_gain_factor(gain_sym)
-    take_profit(factor)
-    @mults.delete("mult_#{get_gain_index(gain_sym)}".to_sym)
-
-    @done_gains << gain_sym
-    close_position if @position_size == 0
-  end
-
-  def take_profit_all_if(&block)
-    @gains.each do |key, target|
-      next if @done_gains.include?(key)
-      do_take_profit(key) if yield(target)
-    end
-  end
-
-  def do_break_even
-    diff = @gains.size - @position_size
-    if diff > 0
-      if diff > 1
-        range = 0
-        @done_gains.each { |gain| range = @gains[gain] if (@gains[gain] < range || range == 0) }
-        if (@current.value <= (@position_val + range) && @position == :long) ||
-           (@current.value >= (@position_val - range) && @position == :short)
-          take_profit_all_if { true }
-        end
-      else
-        if (@current.value <= (@position_val) && @position == :long) ||
-           (@current.value >= (@position_val) && @position == :short)
-          take_loss(false, @mults)
-        end
-      end
-    end
   end
 
   def run_strategy
