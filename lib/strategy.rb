@@ -47,6 +47,10 @@ class Strategy
     return @one_shot && qty_trades > 0 && @position == :liquid
   end
 
+  def create_tt_and_compute(tt)
+    TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+  end
+
   def enter_position(position_type)
     return if risky?
 

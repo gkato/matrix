@@ -13,6 +13,17 @@ describe Strategy do
   let(:openning) { 3052 }
   let(:strategy) { Strategy.new(poss, tic_value, limit_time, historic, openning) }
 
+  describe "#create_tt_and_compute" do
+    context "given an tt info" do
+      it "creates a tt object" do
+        result = strategy.create_tt_and_compute(historic.first)
+        expect(result.value).to eq(3050)
+        expect(result.quantity).to eq(1)
+        expect(result.ask).to eq("A")
+        expect(result.bid).to eq("B")
+      end
+    end
+  end
 
   describe "#was_last_tt?" do
     before do

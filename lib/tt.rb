@@ -4,13 +4,13 @@ class TT
   def initialize(date, value, quantity, ask, bid, agressor)
     self.date = date
     self.value = value
-    self.quantity = quantity
+    self.quantity = quantity.to_i
     self.ask = ask
     self.bid = bid
 
-    if agressor == "Comprador"
+    if ["Comprador",:ask].include?(agressor)
       self.agressor = :ask
-    elsif agressor == "Vendedor"
+    elsif ["Vendedor",:bid].include?(agressor)
       self.agressor = :bid
     end
   end

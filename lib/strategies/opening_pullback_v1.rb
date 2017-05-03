@@ -1,7 +1,7 @@
-require './lib/strategy'
+require './lib/strategies/flow_strategy'
 require './lib/inputs'
 
-class OpeningPullbackV1 < Strategy
+class OpeningPullbackV1 < FlowStrategy
 
   attr_accessor :pullback, :await_pullback
 
@@ -15,11 +15,42 @@ class OpeningPullbackV1 < Strategy
     @one_shot = true
   end
 
-  def reached_start?(position, current_value, openning, start, allowed)
-  end
-
   def flip_allowed?
     (@current.value >= @openning && @last.value < @openning) || (@current.value <= @openning && @last.value > @openning)
+  end
+
+  def apply_strategy_rule
+    if @await_pullback.nil? || @await_pullback == :await
+      if (@position == :liquid && @current.value >= (@openning + @start) && @allowed)
+        @await_pullback = :pb_long
+      end
+      if (@position == :liquid && @current.value <= (@openning - @start) && @allowed)
+        @await_pullback = :pb_short
+      end
+    else
+      if enter_long_position?
+        enter_position(:long)
+        return
+      end
+      if enter_short_position?
+        enter_position(:short)
+        return
+      end
+      @await_pullback = :await if flip_allowed?
+    end
+  end
+
+  def enter_long_position?
+    @await_pullback == :pb_long && @current.value <= ((@openning + @start) - @pullback) && indicators_filter(@await_pullback)
+  end
+
+  def enter_short_position?
+    @await_pullback == :pb_short && @current.value >= ((@openning - @start) + @pullback) && indicators_filter(@await_pullback)
+  end
+
+  def indicators_filter(await_pb)
+    return true if await_pb == :pb_long
+    return true if await_pb == :pb_short
   end
 
   def run_strategy
@@ -28,7 +59,7 @@ class OpeningPullbackV1 < Strategy
     @historic.each_with_index do |tt, i|
       @last = @current
 
-      @current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      @current = create_tt_and_compute(tt)
 
       break if was_last_tt?
 
@@ -37,24 +68,9 @@ class OpeningPullbackV1 < Strategy
       end
 
       if(@position == :liquid)
-        if @await_pullback.nil? || @await_pullback == :await
-          if (@position == :liquid && @current.value >= (@openning + @start) && @allowed)
-            @await_pullback = :pb_long
-          end
-          if (@position == :liquid && @current.value <= (@openning - @start) && @allowed)
-            @await_pullback = :pb_short
-          end
-        else
-          if(@await_pullback == :pb_long && @current.value <= ((@openning + @start) - @pullback))
-            enter_position :long
-          end
-          if(@await_pullback == :pb_short && @current.value >= ((@openning - @start) + @pullback))
-            enter_position :short
-          end
-        end
+        apply_strategy_rule
         next
       end
-
 
       take_profit_all_if do |target|
         if @position == :long

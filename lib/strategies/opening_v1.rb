@@ -8,7 +8,7 @@ class OpeningV1 < Strategy
     @historic.each_with_index do |tt, i|
       @last = @current
 
-      @current = TT.new(tt[:date].to_datetime, tt[:value], tt[:qty], tt[:ask], tt[:bid], tt[:agressor])
+      @current = create_tt_and_compute(tt)
 
       break if was_last_tt?
 

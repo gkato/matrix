@@ -80,7 +80,7 @@ class TradeSystemV1
   end
 
   def fetch_all_simulations
-    (@matrix_db.on(:ts_results).find({tsId:@tsId}) || []).to_a
+    (@matrix_db.on(:ts_results).find({tsId:@tsId,name:@name}) || []).to_a
   end
 
   def possibility_discover(stop_limit, poss, date)

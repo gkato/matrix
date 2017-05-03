@@ -7,6 +7,7 @@ require_relative "../reporter"
 require_relative "../strategies/opening_v1"
 require_relative "../strategies/opening_pullback_v1"
 require_relative "../strategies/opening_pullback_v2"
+require_relative "../strategies/opening_pullback_v3"
 
 class ContainerV1
 
@@ -56,13 +57,15 @@ class ContainerV1
 
         day = data_loader.load(file)
 
-        Parallel.each(poss_to_process, in_threads: 1) do |poss|
+        processed = []
+        Parallel.each(poss_to_process, in_threads: 20) do |poss|
           strategy = strategy_clazz.new(poss, ticval, time_limit, day[:tt], day[:openning])
           strategy.visual = visual
           result = strategy.run_strategy
 
-          result_db.on(:results).insert_one({ possId:poss[:possId], date:current_date, net:result, strategy_name:poss[:name] })
+          processed << { possId:poss[:possId], date:current_date, net:result, strategy_name:poss[:name] }
         end
+        result_db.on(:results).insert_many(processed)
       end
 
       data_loader.close

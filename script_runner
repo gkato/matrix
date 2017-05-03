@@ -5,23 +5,9 @@ Dir.entries("./csv").select {|f| f =~ /#{file_pattern}/}.sort {|a,b| a <=> b}.ea
 days.each_slice(10).to_a
 
 ---------------------
-bin/matrix.sh strat run "01/02/2017,02/02/2017,03/02/2017,06/02/2017,07/02/2017,17/03/2017,20/03/2017],strategy_name:opening_v1,equity:WDO"
-bin/matrix.sh strat run "08/02/2017,09/02/2017,10/02/2017,13/02/2017,14/02/2017,21/03/2017,22/03/2017],strategy_name:opening_v1,equity:WDO"
-bin/matrix.sh strat run "15/02/2017,16/02/2017,17/02/2017,20/02/2017,21/02/2017,24/02/2017,24/03/2017],strategy_name:opening_v1,equity:WDO"
-bin/matrix.sh strat run "22/02/2017,23/02/2017,31/01/2017,01/03/2017,02/03/2017,27/03/2017,28/03/2017],strategy_name:opening_v1,equity:WDO"
-bin/matrix.sh strat run "03/03/2017,06/03/2017,07/03/2017,08/03/2017,09/03/2017,30/03/2017,31/03/2017],strategy_name:opening_v1,equity:WDO"
-bin/matrix.sh strat run "10/03/2017,13/03/2017,14/03/2017,15/03/2017,16/03/2017,23/03/2017,29/03/2017],strategy_name:opening_v1,equity:WDO"
-
-bin/matrix.sh strat run "31/03/2017,02/02/2017,03/02/2017,06/02/2017,07/02/2017,17/03/2017,20/03/2017],strategy_name:opening_pullback_v1,equity:WDO"
-bin/matrix.sh strat run "08/02/2017,09/02/2017,10/02/2017,13/02/2017,14/02/2017,21/03/2017,22/03/2017],strategy_name:opening_pullback_v1,equity:WDO"
-bin/matrix.sh strat run "15/02/2017,16/02/2017,17/02/2017,20/02/2017,21/02/2017,24/02/2017,24/03/2017],strategy_name:opening_pullback_v1,equity:WDO"
-bin/matrix.sh strat run "22/02/2017,23/02/2017,31/01/2017,01/03/2017,02/03/2017,27/03/2017,28/03/2017],strategy_name:opening_pullback_v1,equity:WDO"
-bin/matrix.sh strat run "03/03/2017,06/03/2017,07/03/2017,08/03/2017,09/03/2017,23/03/2017,29/03/2017],strategy_name:opening_pullback_v1,equity:WDO"
-bin/matrix.sh strat run "10/03/2017,13/03/2017,14/03/2017,15/03/2017,16/03/2017,30/03/2017,01/02/2017],strategy_name:opening_pullback_v1,equity:WDO"
-
-bin/matrix.sh strat run "01/02/2017,02/02/2017,03/02/2017,06/02/2017,07/02/2017,17/03/2017,20/03/2017],strategy_name:opening_pullback_v1,equity:WIN"
-bin/matrix.sh strat run "08/02/2017,09/02/2017,10/02/2017,13/02/2017,14/02/2017,21/03/2017,22/03/2017],strategy_name:opening_pullback_v1,equity:WIN"
-bin/matrix.sh strat run "15/02/2017,16/02/2017,17/02/2017,20/02/2017,21/02/2017,23/03/2017,29/03/2017],strategy_name:opening_pullback_v1,equity:WIN"
-bin/matrix.sh strat run "22/02/2017,23/02/2017,31/01/2017,01/03/2017,02/03/2017,27/03/2017,28/03/2017],strategy_name:opening_pullback_v1,equity:WIN"
-bin/matrix.sh strat run "03/03/2017,06/03/2017,07/03/2017,08/03/2017,09/03/2017,24/02/2017,24/03/2017],strategy_name:opening_pullback_v1,equity:WIN"
-bin/matrix.sh strat run "10/03/2017,13/03/2017,14/03/2017,15/03/2017,16/03/2017,30/03/2017,31/03/2017],strategy_name:opening_pullback_v1,equity:WIN"
+bin/matrix.sh strat run "trading_days:[01/02/2017,02/02/2017,03/02/2017,06/02/2017,07/02/2017,08/02/2017,09/02/2017,10/02/2017,13/02/2017,14/02/2017],strategy_name:opening_pullback_v3,equity:WDO"
+bin/matrix.sh strat run "trading_days:[15/02/2017,16/02/2017,17/02/2017,20/02/2017,21/02/2017,22/02/2017,23/02/2017,31/01/2017,01/03/2017,02/03/2017],strategy_name:opening_pullback_v3,equity:WDO"
+bin/matrix.sh strat run "trading_days:[03/03/2017,06/03/2017,07/03/2017,08/03/2017,09/03/2017,10/03/2017,13/03/2017,14/03/2017,15/03/2017,16/03/2017],strategy_name:opening_pullback_v3,equity:WDO"
+bin/matrix.sh strat run "trading_days:[17/03/2017,20/03/2017,21/03/2017,22/03/2017,23/03/2017,24/02/2017,24/03/2017,27/03/2017,28/03/2017,29/03/2017],strategy_name:opening_pullback_v3,equity:WDO"
+bin/matrix.sh strat run "trading_days:[30/03/2017,03/04/2017,04/04/2017,05/04/2017,06/04/2017,07/04/2017,10/04/2017,11/04/2017,12/04/2017,13/04/2017],strategy_name:opening_pullback_v3,equity:WDO"
+bin/matrix.sh strat run "trading_days:[17/04/2017,18/04/2017,19/04/2017,20/04/2017,24/04/2017,25/04/2017,26/04/2017,27/04/2017,31/03/2017],strategy_name:opening_pullback_v3,equity:WDO"

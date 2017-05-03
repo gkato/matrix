@@ -174,7 +174,7 @@ describe ContainerV1 do
       allow(strategy).to receive(:visual=)
       allow(data_loader).to receive(:load).and_return({tt:[tt]})
       allow(data_loader).to receive(:close)
-      allow(matrix_db).to receive(:insert_one)
+      allow(matrix_db).to receive(:insert_many)
       allow(matrix_db).to receive(:delete)
     end
 
@@ -193,7 +193,7 @@ describe ContainerV1 do
         expect(matrix_poss_db).to have_received(:insert_many).with(possibilities)
         expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
         #expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
-        expect(matrix_db).to have_received(:insert_one)
+        expect(matrix_db).to have_received(:insert_many)
         expect(matrix_db).to have_received(:close).twice
         expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
       end
@@ -214,7 +214,7 @@ describe ContainerV1 do
         expect(matrix_poss_db).to have_received(:find).with({"name":strat_equity})
         #expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
         expect(OpeningV1).not_to receive(:new)
-        expect(matrix_db).not_to receive(:insert_one)
+        expect(matrix_db).not_to receive(:insert_many)
         expect(matrix_db).to have_received(:close).twice
         expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
       end
@@ -262,7 +262,7 @@ describe ContainerV1 do
         expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})
 
         #expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, possId:0})
-        expect(matrix_db).to have_received(:insert_one)
+        expect(matrix_db).to have_received(:insert_many)
         expect(matrix_db).to have_received(:close).twice
 
         expect(matrix_db).to have_received(:find).with({strategy_name:strat_equity, date:trading_day})

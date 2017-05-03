@@ -164,7 +164,7 @@ describe TradeSystemV1 do
       context "given a set o simulation data" do
         it "returns all data" do
           expected = [{tsId:1, net:-10, possId:2, date:DateTime.new}]
-          allow(matrix_db).to receive(:find).with({tsId:1}).and_return(expected)
+          allow(matrix_db).to receive(:find).with({tsId:1,name:ts_name}).and_return(expected)
 
           result = trade_system.fetch_all_simulations
           expect(result).to eq(expected)
@@ -172,7 +172,7 @@ describe TradeSystemV1 do
       end
       context "given a set o simulation data" do
         it "returns nil when no simultion exists" do
-          allow(matrix_db).to receive(:find).with({tsId:1}).and_return(nil)
+          allow(matrix_db).to receive(:find).with({tsId:1,name:ts_name}).and_return(nil)
 
           result = trade_system.fetch_all_simulations
           expect(result).to eq([])
@@ -200,7 +200,7 @@ describe TradeSystemV1 do
           allow(matrix_result).to receive(:first).and_return(last_result)
 
           #last simulation allows
-          allow(matrix_db).to receive(:find).with({tsId:params[:tsId]}).and_return([])
+          allow(matrix_db).to receive(:find).with({tsId:params[:tsId],name:ts_name}).and_return([])
 
           # starting results mocks and allows - day 02/02
           previous_date = start_date - params[:n_days]
@@ -293,7 +293,7 @@ describe TradeSystemV1 do
           allow(matrix_result).to receive(:first).and_return(last_result)
 
           #last simulation allows
-          allow(matrix_db).to receive(:find).with({tsId:params[:tsId]}).and_return([
+          allow(matrix_db).to receive(:find).with({tsId:params[:tsId],name:ts_name}).and_return([
             {tsId:params[:tsId], net:-10, possId:2, date:start_date+1},
             {tsId:params[:tsId], net:-30, possId:2, date:start_date+2}
           ])
@@ -355,7 +355,7 @@ describe TradeSystemV1 do
           allow(matrix_result).to receive(:first).and_return(last_result)
 
           #last simulation allows
-          allow(matrix_db).to receive(:find).with({tsId:params[:tsId]}).and_return([
+          allow(matrix_db).to receive(:find).with({tsId:params[:tsId],name:ts_name}).and_return([
             {tsId:params[:tsId], net:-10, possId:1, date:start_date+1},
             {tsId:params[:tsId], net:30, possId:1, date:start_date+2}
           ])

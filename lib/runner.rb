@@ -9,7 +9,7 @@ if ARGV.first == "ts"
   if ARGV[1] && ARGV[2]
     tsId = ARGV[2].scan(/tsId:(\d+)/).flatten.first.to_i rescue nil if ARGV[2] =~ /tsId/
     ts_name = ARGV[2].scan(/ts_name:(ts_\S+WDO|WIN)/).flatten.first rescue nil if ARGV[2] =~ /ts_name/
-    trade_systems = ["ts_opening_v1_WDO", "ts_opening_v1_WIN", "ts_opening_pullback_v1_WDO", "ts_opening_pullback_v1_WIN", "ts_opening_pullback_v2_WDO", "ts_opening_pullback_v2_WIN"]
+    trade_systems = ["ts_opening_v1_WDO", "ts_opening_v1_WIN", "ts_opening_pullback_v1_WDO", "ts_opening_pullback_v1_WIN", "ts_opening_pullback_v2_WDO", "ts_opening_pullback_v2_WIN", "ts_opening_pullback_v3_WDO"]
 
     if ARGV[1].start_with?("run")
       opts[:tsId] = tsId if tsId
