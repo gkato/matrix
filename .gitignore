@@ -1,4 +1,4 @@
-mongo_bkp/
+#mongo_bkp/
 csv/*
 .byebug_history
 .DS_Store
