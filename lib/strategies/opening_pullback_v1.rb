@@ -1,5 +1,6 @@
 require './lib/strategies/flow_strategy'
 require './lib/inputs'
+require 'date'
 
 class OpeningPullbackV1 < FlowStrategy
 
@@ -16,6 +17,7 @@ class OpeningPullbackV1 < FlowStrategy
   end
 
   def flip_allowed?
+    return if @last.nil?
     (@current.value >= @openning && @last.value < @openning) || (@current.value <= @openning && @last.value > @openning)
   end
 
@@ -53,6 +55,10 @@ class OpeningPullbackV1 < FlowStrategy
     return true if await_pb == :pb_short
   end
 
+  def stop_price_reference
+    @openning
+  end
+
   def run_strategy
     @allowed = true
 
@@ -83,8 +89,8 @@ class OpeningPullbackV1 < FlowStrategy
       next if @position_size == 0
 
 
-      if (@current.value <= (@openning - @stop) && @position == :long) ||
-         (@current.value >= (@openning + @stop) && @position == :short)
+      if (@current.value <= (stop_price_reference - @stop) && @position == :long) ||
+         (@current.value >= (stop_price_reference + @stop) && @position == :short)
         take_loss(false, @mults)
         next
       end
