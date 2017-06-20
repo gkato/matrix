@@ -101,4 +101,72 @@ class InflectionV1 < OpeningPullbackV1
     end
     return false
   end
+
+  def self.create_inputs(equity="WDO")
+    possibilities = []
+
+    if equity == "WDO"
+      start = (8..10).to_a
+      pullback = (4..5).to_a
+      pullback_var = (2..3).to_a
+      stop = (4..5).to_a
+      gain_1 = (5..6).to_a
+      gain_2 = (6..10).to_a
+      flow = [1000,1500]
+      flow_flip = [20,30]
+      kick_off = (-2..2).to_a
+      total_loss = [-10000]
+      total_gain = [10000]
+
+      possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
+      possibilities = Inputs.combine_array_map(start,      possibilities, :start)
+      possibilities = Inputs.combine_array_map(stop,       possibilities, :stop)
+      possibilities = Inputs.combine_array_map(flow,   possibilities, :flow)
+      possibilities = Inputs.combine_array_map(flow_flip,   possibilities, :flow_flip)
+      possibilities = Inputs.combine_array_map(pullback,   possibilities, :pullback)
+      possibilities = Inputs.combine_array_map(pullback_var,   possibilities, :pullback_var)
+      possibilities = Inputs.combine_array_map(kick_off,   possibilities, :kick_off)
+      possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
+      possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
+
+      possibilities.delete_if do |poss|
+        total_gain = (poss[:gain_1] + poss[:gain_2]) * 10
+        total_loss = (poss[:stop]*3) * 10
+
+        (total_gain <  total_loss) || !((poss[:pullback] <= poss[:start]) && (poss[:gain_1] <= poss[:gain_2]))
+      end
+    end
+    if equity == "WIN"
+      start = [150,200,250]
+      pullback = [100,150,200]
+      pullback_var = [50,75]
+      stop = [75,100,150]
+      gain_1 = [50,100]
+      gain_2 = [100,150,200,250]
+      flow = [1000,1250,1500]
+      flow_flip = [10,20,30]
+      kick_off = [-100,-50,0,50,100]
+      total_loss = [-10000]
+      total_gain = [10000]
+
+      possibilities = Inputs.combine_arrays(gain_1, gain_2, :gain_1, :gain_2)
+      possibilities = Inputs.combine_array_map(start,      possibilities, :start)
+      possibilities = Inputs.combine_array_map(stop,       possibilities, :stop)
+      possibilities = Inputs.combine_array_map(flow,   possibilities, :flow)
+      possibilities = Inputs.combine_array_map(flow_flip,   possibilities, :flow_flip)
+      possibilities = Inputs.combine_array_map(pullback,   possibilities, :pullback)
+      possibilities = Inputs.combine_array_map(pullback_var,   possibilities, :pullback_var)
+      possibilities = Inputs.combine_array_map(kick_off,   possibilities, :kick_off)
+      possibilities = Inputs.combine_array_map(total_gain, possibilities, :total_gain)
+      possibilities = Inputs.combine_array_map(total_loss, possibilities, :total_loss)
+
+      possibilities.delete_if do |poss|
+        total_gain = (poss[:gain_1] + poss[:gain_2])
+        total_loss = (poss[:stop]*3)
+
+        (total_gain <  total_loss) || !((poss[:pullback] <= poss[:start]) && (poss[:gain_1] <= poss[:gain_2]))
+      end
+    end
+    possibilities
+  end
 end
