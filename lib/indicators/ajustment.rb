@@ -9,6 +9,8 @@ class Ajustment
   end
 
   def add_data(historic_data)
+    return if historic_data.nil?
+
     start_date = DateTime.strptime("15/10/2016 15:50:00", "%d/%m/%Y %H:%M:%S")
     end_date = DateTime.strptime("15/10/2016 16:00:00", "%d/%m/%Y %H:%M:%S")
 
@@ -31,7 +33,6 @@ class Ajustment
       total_contracts += historic[:qty].to_f
       total_value += historic[:value].to_f * historic[:qty].to_f
     end
-    return total_value / total_contracts
-
+    return (total_value / total_contracts).round(2)
   end
 end

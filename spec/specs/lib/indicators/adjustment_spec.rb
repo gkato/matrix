@@ -17,6 +17,12 @@ describe Ajustment do
  let(:subject) { Ajustment.new }
 
  describe "#add_data" do
+   context "given nil historic data" do
+     it "ignores data" do
+       subject.add_data(historic.first)
+       expect(subject.data.size).to eq(0)
+     end
+   end
    context "given a historic data with data lower than 15:50:00" do
      it "ignores data" do
        subject.add_data(historic.first)
