@@ -1,6 +1,6 @@
 require 'date'
 
-class Ajustment
+class Adjustment
 
   attr_accessor :data
 

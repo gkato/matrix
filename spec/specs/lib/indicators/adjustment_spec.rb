@@ -1,6 +1,6 @@
-require 'indicators/ajustment'
+require 'indicators/adjustment'
 
-describe Ajustment do
+describe Adjustment do
  let(:historic) do
    [
      { date:DateTime.strptime("31/01/2017 09:00:01", "%d/%m/%Y %H:%M:%S"), value:3050, qty:1, ask:"A", bid:"B", :agressor=>"Comprador"},
@@ -14,7 +14,7 @@ describe Ajustment do
      { date:DateTime.strptime("31/01/2017 16:01:03", "%d/%m/%Y %H:%M:%S"), value:3049, qty:1, ask:"E", bid:"F", :agressor=>"Vendedor"}
    ]
  end
- let(:subject) { Ajustment.new }
+ let(:subject) { Adjustment.new }
 
  describe "#add_data" do
    context "given nil historic data" do
