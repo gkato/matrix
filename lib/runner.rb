@@ -1,6 +1,7 @@
 require 'yaml'
 require_relative "./containers/container_v1"
 require_relative "./containers/ts_container_v1"
+require_relative "./data_loader"
 
 $conf = YAML::load_file(File.join(__dir__, '../conf.yml'))
 opts={}
@@ -20,6 +21,22 @@ if ARGV.first == "ts"
       end
     elsif ARGV[1].start_with?("trace")
       TSContainerV1.new.show_ts_trace(tsId, ts_name)
+    end
+  end
+elsif ARGV.first == "day"
+  if ARGV[1]
+    if ARGV[1] == "all"
+      if ARGV[2]
+        data_loader = DataLoader.new
+        DataLoader.fetch_trading_days(ARGV[2]).each do |file|
+          data_loader.load(file,just_check:true)
+        end
+        data_loader.close
+      end
+    elsif
+      data_loader = DataLoader.new
+      data_loader.load(ARGV[1])
+      data_loader.close
     end
   end
 elsif ARGV.first == "results"

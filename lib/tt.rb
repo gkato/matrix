@@ -12,6 +12,8 @@ class TT
       self.agressor = :ask
     elsif ["Vendedor",:bid].include?(agressor)
       self.agressor = :bid
+    elsif ["Direto",:direct].include?(agressor)
+      self.agressor = :direct
     end
   end
 

@@ -9,4 +9,7 @@ fi
 if [ "$1" = "ts" ]; then
   ruby ./lib/runner.rb $1 $2 $3
 fi
+if [ "$1" = "day" ]; then
+  ruby ./lib/runner.rb $1 $2 $3
+fi
 

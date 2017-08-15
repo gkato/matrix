@@ -66,6 +66,10 @@ class OpeningPullbackV1 < FlowStrategy
       @last = @current
 
       @current = create_tt_and_compute(tt)
+      if(@current.agressor == :direct)
+        @current = @last
+        next
+      end
 
       break if was_last_tt?
 
